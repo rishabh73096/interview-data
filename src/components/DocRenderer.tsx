@@ -126,7 +126,7 @@ function renderInline(text: string, key: string | number): React.ReactNode {
           return (
             <code
               key={idx}
-              className="rounded bg-black/5 px-1.5 py-0.5 font-mono text-[0.85em] break-all text-orange-700 dark:bg-white/10 dark:text-orange-300"
+              className="rounded bg-orange-500/8 px-1.5 py-0.5 font-mono text-[0.85em] break-all text-orange-700 dark:bg-orange-400/10 dark:text-orange-300"
             >
               {part.slice(1, -1)}
             </code>
@@ -145,10 +145,10 @@ const DiagramBox: React.FC<{ text: string }> = ({ text }) => (
 );
 
 const FlowChart: React.FC<{ steps: string[] }> = ({ steps }) => (
-  <div className="mb-5 flex flex-col items-center gap-0 rounded-lg border border-black/10 bg-black/[0.02] py-5 dark:border-white/10 dark:bg-white/[0.03]">
+  <div className="mb-5 flex flex-col items-center gap-0 rounded-lg border border-orange-900/8 bg-orange-500/4 py-5 dark:border-orange-400/10 dark:bg-orange-400/4">
     {steps.map((step, idx) => (
       <React.Fragment key={idx}>
-        <div className="rounded-lg border border-orange-500/30 bg-white px-4 py-2 text-center text-sm font-medium text-gray-800 shadow-sm dark:bg-[#111827] dark:text-gray-100">
+        <div className="rounded-lg border border-orange-500/30 bg-orange-50/80 px-4 py-2 text-center text-sm font-medium text-gray-800 shadow-sm dark:bg-[#1c140c] dark:text-gray-100">
           {renderInline(step, idx)}
         </div>
         {idx < steps.length - 1 && (
@@ -200,10 +200,10 @@ const DocRenderer: React.FC<{ content: string }> = ({ content }) => {
             );
           case 'table':
             return (
-              <div key={idx} className="mb-5 overflow-x-auto rounded-lg border border-black/10 dark:border-white/10">
+              <div key={idx} className="mb-5 overflow-x-auto rounded-lg border border-orange-900/8 dark:border-orange-400/10">
                 <table className="w-full min-w-[420px] text-left text-sm">
                   <thead>
-                    <tr className="bg-black/[0.03] dark:bg-white/5">
+                    <tr className="bg-orange-500/5 dark:bg-orange-400/5">
                       {block.headers.map((h, hIdx) => (
                         <th
                           key={hIdx}

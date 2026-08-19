@@ -54,7 +54,7 @@ const InterviewQAPage: React.FC = () => {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search a question or keyword…"
             inputMode="search"
-            className="w-full rounded-full border border-black/10 bg-white px-5 py-3 text-sm shadow-sm outline-none transition-colors focus:border-orange-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+            className="w-full rounded-full border border-orange-900/8 bg-orange-50/60 px-5 py-3 text-sm shadow-sm outline-none transition-colors focus:border-orange-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
           />
           {normalizedQuery && (
             <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
@@ -84,7 +84,7 @@ const InterviewQAPage: React.FC = () => {
               {cat.items.map((item, idx) => (
                 <div
                   key={`${cat.title}-${idx}`}
-                  className={`rounded-xl border border-black/10 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5 dark:border-white/10 dark:bg-white/3 ${
+                  className={`rounded-xl border border-orange-900/8 bg-orange-50/60 p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5 dark:border-orange-400/10 dark:bg-orange-500/5 ${
                     item.code ? 'md:col-span-2' : ''
                   }`}
                 >

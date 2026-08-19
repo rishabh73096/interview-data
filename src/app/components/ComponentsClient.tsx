@@ -86,7 +86,7 @@ const ComponentsClient: React.FC = () => {
           {components.map(({ name, description, Component }, index) => (
             <div
               key={name}
-              className="rounded-xl border border-black/10 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-6 dark:border-white/10 dark:bg-white/3"
+              className="rounded-xl border border-orange-900/8 bg-orange-50/60 p-4 shadow-sm transition-shadow hover:shadow-md sm:p-6 dark:border-orange-400/10 dark:bg-orange-500/5"
             >
               <div className="mb-4 flex items-start justify-between gap-2 sm:gap-3">
                 <div className="flex min-w-0 items-start gap-2.5 sm:gap-3">

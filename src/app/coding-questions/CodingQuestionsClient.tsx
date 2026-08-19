@@ -66,7 +66,7 @@ const CodingQuestionsClient: React.FC = () => {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search a question…"
             inputMode="search"
-            className="w-full rounded-full border border-black/10 bg-white px-5 py-3 text-sm shadow-sm outline-none transition-colors focus:border-orange-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+            className="w-full rounded-full border border-orange-900/8 bg-orange-50/60 px-5 py-3 text-sm shadow-sm outline-none transition-colors focus:border-orange-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
           />
           {normalizedQuery && (
             <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
@@ -93,7 +93,7 @@ const CodingQuestionsClient: React.FC = () => {
               <span className="text-sm font-normal text-gray-400">{cat.items.length}</span>
             </h2>
 
-            <div className="overflow-hidden rounded-xl border border-black/10 bg-white shadow-sm dark:border-white/10 dark:bg-white/3">
+            <div className="overflow-hidden rounded-xl border border-orange-900/8 bg-orange-50/60 shadow-sm dark:border-orange-400/10 dark:bg-orange-500/5">
               {cat.items.map((item, idx) => {
                 const key = `${cat.title}-${idx}`;
                 const isOpen = expanded.has(key);

@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { systemDesignChapters } from '../../data/systemDesign';
 import DocRenderer from '../../components/DocRenderer';
+import PageHero from '../../components/PageHero';
 
 const totalTopics = systemDesignChapters.reduce((sum, ch) => sum + ch.topics.length, 0);
 
@@ -103,35 +104,31 @@ const SystemDesignPage: React.FC = () => {
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
   return (
-    <main className="mx-auto max-w-7xl px-4 pb-24 sm:px-6">
-      <section className="flex flex-col items-center gap-4 py-10 text-center sm:py-16">
-        <span className="rounded-full border border-black/10 bg-black/3 px-4 py-1 text-xs font-medium tracking-wide text-gray-600 uppercase dark:border-white/10 dark:bg-white/5 dark:text-gray-300">
-          Study Notes
-        </span>
-        <h1 className="max-w-2xl text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl lg:text-5xl dark:text-white">
-          System Design{' '}
-          <span className="bg-linear-to-r from-orange-600 via-amber-500 to-yellow-400 bg-clip-text text-transparent">
-            Notebook
-          </span>
-        </h1>
-        <p className="max-w-2xl text-sm text-gray-600 sm:text-base lg:text-lg dark:text-gray-300">
-          {totalTopics} topics across {systemDesignChapters.length} chapters — Requirements, Capacity
-          Estimation, API &amp; Database Design, SQL vs NoSQL, Indexing, Caching and Redis. Written as
-          proper notebook notes, not interview one-liners.
-        </p>
-      </section>
+    <main className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 sm:pb-20">
+      <PageHero
+        eyebrow="Study Notes"
+        title="System Design"
+        accent="Notebook"
+        description={
+          <>
+            {totalTopics} topics across {systemDesignChapters.length} chapters — Requirements, Capacity
+            Estimation, API &amp; Database Design, SQL vs NoSQL, Indexing, Caching and Redis. Written as
+            proper notebook notes, not interview one-liners.
+          </>
+        }
+      />
 
       {/* mobile contents toggle */}
       <div className="mb-4 lg:hidden">
         <button
           onClick={() => setMobileNavOpen((o) => !o)}
-          className="flex w-full items-center justify-between rounded-lg border border-black/10 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-gray-200"
+          className="flex w-full items-center justify-between rounded-lg border border-orange-900/8 bg-orange-50/60 px-4 py-3 text-sm font-medium text-gray-700 shadow-sm dark:border-orange-400/10 dark:bg-orange-500/5 dark:text-gray-200"
         >
           Contents
           <span className={`transition-transform ${mobileNavOpen ? 'rotate-180' : ''}`}>⌄</span>
         </button>
         {mobileNavOpen && (
-          <div className="mt-2 max-h-[60vh] overflow-y-auto rounded-lg border border-black/10 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-white/5">
+          <div className="mt-2 max-h-[60vh] overflow-y-auto rounded-lg border border-orange-900/8 bg-orange-50/60 p-3 shadow-sm dark:border-orange-400/10 dark:bg-orange-500/5">
             <SidebarLinks activeId={activeId} onNavigate={() => setMobileNavOpen(false)} />
           </div>
         )}
@@ -146,21 +143,21 @@ const SystemDesignPage: React.FC = () => {
 
         <div className="min-w-0">
           {systemDesignChapters.map((chapter, chIdx) => (
-            <div key={chapter.id} className="mb-14 min-w-0">
-              <div className="mb-6 flex items-center gap-3">
+            <div key={chapter.id} className="mb-10 min-w-0">
+              <div className="mb-5 flex items-center gap-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-orange-600 via-amber-500 to-yellow-400 text-sm font-bold text-white">
                   {String(chIdx + 1).padStart(2, '0')}
                 </span>
                 <h2 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-white">{chapter.title}</h2>
               </div>
 
-              <div className="flex min-w-0 flex-col gap-10">
+              <div className="flex min-w-0 flex-col gap-6">
                 {chapter.topics.map((topic) => (
                   <article
                     key={topic.id}
                     id={topic.id}
                     data-topic-id={topic.id}
-                    className="min-w-0 scroll-mt-24 rounded-xl border border-black/10 bg-white p-5 shadow-sm sm:p-7 dark:border-white/10 dark:bg-white/3"
+                    className="min-w-0 scroll-mt-24 rounded-xl border border-orange-900/8 bg-orange-50/60 p-5 shadow-sm sm:p-7 dark:border-orange-400/10 dark:bg-orange-500/5"
                   >
                     <h3 className="mb-4 text-lg font-semibold text-gray-900 sm:text-xl dark:text-white">
                       {topic.title}
