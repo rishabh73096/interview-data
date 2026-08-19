@@ -7,9 +7,10 @@ export default function OtpInput() {
   const [otp, setOtp] = useState(Array(LENGTH).fill(""));
   const inputRefs = useRef([]);
 
-  // focus the first box on mount
+  // focus the first box on mount (preventScroll so it doesn't yank the page
+  // when this demo is embedded lower down on a long showcase page)
   useEffect(() => {
-    inputRefs.current[0]?.focus();
+    inputRefs.current[0]?.focus({ preventScroll: true });
   }, []);
 
   const handleChange = (e, index) => {

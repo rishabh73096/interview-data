@@ -1,4 +1,6 @@
-import React from 'react';
+"use client";
+
+import React, { useState } from 'react';
 
 import Accordion from '../components/interview/Accordion';
 import ApiFetch from '../components/interview/ApiFetch';
@@ -26,6 +28,9 @@ import Stopwatch from '../components/interview/Stopwatch';
 import Tabs from '../components/interview/Tabs';
 import Toast from '../components/interview/Toast';
 import Todo from '../components/interview/Todo';
+
+import { componentSource } from '../data/componentSource';
+import CodeDrawer from '../components/CodeDrawer';
 
 const components: { name: string; description: string; Component: React.ComponentType }[] = [
   { name: 'Accordion', description: 'Collapsible panels with single or multi-open state control.', Component: Accordion },
@@ -57,19 +62,21 @@ const components: { name: string; description: string; Component: React.Componen
 ];
 
 const HomePage: React.FC = () => {
+  const [activeCode, setActiveCode] = useState<string | null>(null);
+
   return (
-    <main className="mx-auto max-w-7xl px-6">
-      <section className="flex flex-col items-center gap-5 py-20 text-center">
+    <main className="mx-auto max-w-7xl px-4 sm:px-6">
+      <section className="flex flex-col items-center gap-4 py-14 text-center sm:gap-5 sm:py-20">
         <span className="rounded-full border border-black/10 bg-black/3 px-4 py-1 text-xs font-medium tracking-wide text-gray-600 uppercase dark:border-white/10 dark:bg-white/5 dark:text-gray-300">
           Frontend Interview Prep
         </span>
-        <h1 className="max-w-3xl text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl dark:text-white">
+        <h1 className="max-w-3xl text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl lg:text-5xl dark:text-white">
           A hands-on showcase of{' '}
           <span className="bg-linear-to-r from-sky-600 via-cyan-500 to-emerald-400 bg-clip-text text-transparent">
             React interview components
           </span>
         </h1>
-        <p className="max-w-2xl text-base text-gray-600 sm:text-lg dark:text-gray-300">
+        <p className="max-w-2xl text-sm text-gray-600 sm:text-base lg:text-lg dark:text-gray-300">
           26 components covering the hooks, state patterns and UI building blocks that show
           up again and again in frontend interviews — from a simple counter to a full
           drag-and-drop Kanban board. Every one is live below, built and rendered from
@@ -83,29 +90,45 @@ const HomePage: React.FC = () => {
         </a>
       </section>
 
-      <section id="components" className="scroll-mt-24 pb-24">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <section id="components" className="scroll-mt-24 pb-16 sm:pb-24">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
           {components.map(({ name, description, Component }, index) => (
             <div
               key={name}
-              className="rounded-xl border border-black/10 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-white/10 dark:bg-white/3"
+              className="rounded-xl border border-black/10 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-6 dark:border-white/10 dark:bg-white/3"
             >
-              <div className="mb-4 flex items-start gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-sky-600 via-cyan-500 to-emerald-400 text-xs font-bold text-white">
-                  {String(index + 1).padStart(2, '0')}
-                </span>
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{name}</h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{description}</p>
+              <div className="mb-4 flex items-start justify-between gap-2 sm:gap-3">
+                <div className="flex min-w-0 items-start gap-2.5 sm:gap-3">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-sky-600 via-cyan-500 to-emerald-400 text-xs font-bold text-white">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <div className="min-w-0">
+                    <h2 className="truncate text-lg font-semibold text-gray-900 dark:text-white">{name}</h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{description}</p>
+                  </div>
                 </div>
+                <button
+                  onClick={() => setActiveCode(name)}
+                  aria-label={`View ${name} source code`}
+                  className="flex shrink-0 items-center gap-1.5 rounded-full border border-black/10 px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-sky-500 hover:text-sky-600 active:bg-black/5 sm:px-3 dark:border-white/10 dark:text-gray-300 dark:hover:text-sky-400 dark:active:bg-white/10"
+                >
+                  <span className="font-mono">{'</>'}</span>
+                  <span className="hidden sm:inline">View Code</span>
+                </button>
               </div>
-              <div className="rounded-lg border border-dashed border-black/10 bg-black/1.5 p-5 dark:border-white/10 dark:bg-white/2">
+              <div className="rounded-lg border border-dashed border-black/10 bg-black/1.5 p-3 sm:p-5 dark:border-white/10 dark:bg-white/2">
                 <Component />
               </div>
             </div>
           ))}
         </div>
       </section>
+
+      <CodeDrawer
+        title={activeCode}
+        code={activeCode ? componentSource[activeCode] : null}
+        onClose={() => setActiveCode(null)}
+      />
     </main>
   );
 };

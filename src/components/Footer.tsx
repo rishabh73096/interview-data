@@ -2,10 +2,10 @@ import React from 'react';
 
 const Footer: React.FC = () => {
   return (
-    <footer className="mt-20">
+    <footer className="mt-14 sm:mt-20">
       <div className="mx-auto max-w-7xl px-4 pb-6">
         <div className="rounded-t-xl bg-linear-to-r from-sky-600 via-cyan-500 to-emerald-400 text-white shadow-lg ring-1 ring-black/5">
-          <div className="flex flex-col items-center justify-between gap-6 px-6 py-8 md:flex-row">
+          <div className="flex flex-col items-center justify-between gap-6 px-5 py-6 sm:px-6 sm:py-8 md:flex-row">
             <div className="text-center md:text-left">
               <p className="text-lg font-semibold">Interview Playground</p>
               <p className="max-w-md text-sm opacity-90">
