@@ -3,13 +3,13 @@
 
 /* custom variables + minimal base styles */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fffaf3;
+  --foreground: #1c1410;
 }
 
 html.dark {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+  --background: #140d08;
+  --foreground: #fbe8d8;
 }
 
 /* keep simple CSS for the vars; Tailwind utilities are available too */

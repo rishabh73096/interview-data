@@ -45,7 +45,7 @@ const CodeDrawer: React.FC<CodeDrawerProps> = ({ title, code, onClose }) => {
       >
         <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex min-w-0 items-center gap-3">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-sky-600 via-cyan-500 to-emerald-400 font-mono text-xs font-bold text-white">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-orange-600 via-amber-500 to-yellow-400 font-mono text-xs font-bold text-white">
               {'</>'}
             </span>
             <div className="min-w-0">
