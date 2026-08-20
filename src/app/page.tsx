@@ -1,5 +1,6 @@
 import React from 'react';
 import PageHero from '../components/PageHero';
+import CreatorSection from '../components/CreatorSection';
 
 const sections: {
   href: string;
@@ -213,6 +214,9 @@ const HomePage: React.FC = () => {
           ))}
         </div>
       </section>
+
+      {/* Creator Info & Portfolio section */}
+      <CreatorSection />
     </main>
   );
 };

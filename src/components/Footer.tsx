@@ -20,8 +20,56 @@ const Footer: React.FC = () => {
                 <span className="rounded-md bg-white/15 px-3 py-1">TypeScript</span>
                 <span className="rounded-md bg-white/15 px-3 py-1">Tailwind CSS</span>
               </div>
-              <span className="text-sm opacity-90">
-                &copy; {new Date().getFullYear()} Interview Playground. Built for practice.
+              <p className="text-sm opacity-95">
+                Built with ❤️ by{' '}
+                <a
+                  href="https://rishabh-portfolio1-ten.vercel.app/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold underline underline-offset-2 hover:opacity-100"
+                >
+                  Rishabh Tiwari
+                </a>
+              </p>
+              <div className="flex flex-wrap justify-center gap-3 text-xs font-medium md:justify-end opacity-90">
+                <a
+                  href="https://rishabh-portfolio1-ten.vercel.app/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:underline"
+                >
+                  Portfolio
+                </a>
+                <span>•</span>
+                <a
+                  href="https://www.linkedin.com/in/rishabh-tiwari"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:underline"
+                >
+                  LinkedIn
+                </a>
+                <span>•</span>
+                <a
+                  href="https://x.com/Rishabh__73"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:underline"
+                >
+                  X (Twitter)
+                </a>
+                <span>•</span>
+                <a
+                  href="https://drive.google.com/file/d/1FAoUklRT1ESkVprO1Ux6IlQnUJnLRlyv/view?usp=sharing"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:underline"
+                >
+                  Resume
+                </a>
+              </div>
+              <span className="text-xs opacity-75">
+                &copy; {new Date().getFullYear()} Interview Playground. All rights reserved.
               </span>
             </div>
           </div>
