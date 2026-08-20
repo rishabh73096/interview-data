@@ -8,7 +8,7 @@
 }
 
 html.dark {
-  --background: #140d08;
+  --background: oklch(39.6% 0.141 25.723);
   --foreground: #fbe8d8;
 }
 

@@ -20,7 +20,7 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-orange-900/8 bg-orange-50/85 backdrop-blur-md dark:border-orange-400/10 dark:bg-[#140d08]/85">
+    <header className="sticky top-0 z-50 border-b border-orange-900/8 bg-orange-50/85 backdrop-blur-md dark:border-orange-400/10 dark:bg-[oklch(39.6%_0.141_25.723)]/85">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4">
         <a href="/" className="flex min-w-0 items-center gap-2.5 sm:gap-3">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-orange-600 via-amber-500 to-yellow-400 font-mono text-xs font-bold text-white shadow-sm sm:h-9 sm:w-9 sm:text-sm">
