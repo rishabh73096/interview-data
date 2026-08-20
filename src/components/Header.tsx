@@ -36,7 +36,7 @@ const Header: React.FC = () => {
           </div>
         </a>
 
-        <nav className="hidden items-center gap-6 text-sm font-medium text-gray-600 sm:flex dark:text-gray-300">
+        <nav className="hidden items-center gap-4 text-sm font-medium text-gray-600 lg:gap-6 sm:flex dark:text-gray-300">
           <a href="/components" className="transition-colors hover:text-gray-900 dark:hover:text-white">
             Components
           </a>
@@ -48,6 +48,9 @@ const Header: React.FC = () => {
           </a>
           <a href="/coding-questions" className="transition-colors hover:text-gray-900 dark:hover:text-white">
             Practice
+          </a>
+          <a href="/hr-questions" className="transition-colors hover:text-gray-900 dark:hover:text-white">
+            HR Prep
           </a>
         </nav>
 
@@ -126,6 +129,13 @@ const Header: React.FC = () => {
               className="rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-black/5 dark:text-gray-200 dark:hover:bg-white/10"
             >
               Practice
+            </a>
+            <a
+              href="/hr-questions"
+              onClick={() => setMenuOpen(false)}
+              className="rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-black/5 dark:text-gray-200 dark:hover:bg-white/10"
+            >
+              HR Prep
             </a>
             <a
               href="/components"
