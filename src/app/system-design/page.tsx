@@ -111,10 +111,12 @@ const SystemDesignPage: React.FC = () => {
         accent="Notebook"
         description={
           <>
-            {totalTopics} topics across {systemDesignChapters.length} chapters — Requirements, Capacity
-            Estimation, API &amp; Database Design, SQL vs NoSQL, Indexing, Caching, Redis, Load Balancing,
-            Vertical vs Horizontal Scaling, Replication, Partitioning and Sharding. Written as proper
-            notebook notes, not interview one-liners.
+            {totalTopics} topics across {systemDesignChapters.length} chapters — from Requirements,
+            Capacity, API &amp; Database Design, SQL vs NoSQL, Indexing and Caching, through scaling,
+            replication, sharding, queues, Kafka, CAP, consistency and Saga, to gateways, rate limiting,
+            circuit breakers, retries, observability, CDN, S3, connection pooling, transactions, locking,
+            isolation levels, failover and disaster recovery. Written as proper notebook notes, not
+            interview one-liners.
           </>
         }
       />
