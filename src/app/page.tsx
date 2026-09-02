@@ -42,8 +42,8 @@ const sections: {
   {
     href: '/system-design',
     title: 'System Design Notebook',
-    stat: '53 topics · 13 chapters',
-    count: 53,
+    stat: '65 topics · 16 chapters',
+    count: 65,
     description:
       'Proper notebook-style notes, not one-liners — from Requirements, Capacity, API & DB design, SQL vs NoSQL, Indexing and Caching, through scaling, replication, sharding, queues, Kafka, CAP, consistency and Saga, to gateways, rate limiting, circuit breakers, retries, observability, CDN, S3, connection pooling, transactions, locking, isolation levels, failover and disaster recovery.',
     icon: (

@@ -1879,5 +1879,547 @@ One line each:
 `
       }
     ]
+  },
+  {
+    "id": "search-and-read-write-optimization",
+    "title": "Search, Full-Text Indexing & Read/Write Optimization",
+    "topics": [
+      {
+        "id": "search-elasticsearch",
+        "title": "Search Systems & Elasticsearch",
+        "content": `> Jab data bahut zyada ho, normal DB se complex text search slow aur weak hoti hai. Ek dedicated search engine (Elasticsearch, OpenSearch, Typesense, Meilisearch, ya Postgres/Mongo ka built-in search) use hota hai.
+
+## Chahiye kya
+
+Keyword search, typo tolerance (fuzzy), relevance ranking, filters (facets), sorting, autocomplete, highlighting. Ye sab \`LIKE '%...%'\` se nahi milta.
+
+## Architecture — DB source of truth, search is a derived index
+
+\`\`\`flow
+PostgreSQL / MongoDB  (source of truth)
+Product created / updated / deleted
+-> sync (event / CDC / job) ->
+Elasticsearch (search index)
+\`\`\`
+
+\`\`\`flow
+User -> Search API -> Elasticsearch -> ranked + filtered results
+\`\`\`
+
+Search engine kabhi source of truth nahi — wo reindex ho sakta hai, data loss OK.
+
+## Why not \`LIKE '%shoe%'\`
+
+- Leading \`%\` -> index use nahi hota -> **full table scan**
+- No relevance, no typo tolerance, no word stemming ("running" vs "run")
+- Big dataset par DB CPU kha jaata hai
+
+## Elasticsearch concepts
+
+- **Index** — searchable documents ka collection (\`products\`, \`users\`, \`articles\`)
+- **Document** — ek record, JSON (\`{ name, brand, price }\`)
+- **Mapping** — fields ke types + kaise analyze hon (text vs keyword vs number)
+- **Shard / Replica** — index partitioned across nodes (scale) + copied (HA) — Kafka/DB jaisa
+- **Query** — match / term / bool / range; results with a relevance \`_score\`
+
+## Sync strategies
+
+- **Dual write** — app DB aur ES dono likhe (simple, but ES fail hua to drift)
+- **Outbox / event** — DB write + event; ek consumer ES update kare (reliable)
+- **CDC** — DB ke change log (WAL/oplog) se ES feed (Debezium); app touch nahi hota
+- **Periodic reindex** — full rebuild (drift fix ke liye, background)
+`
+      },
+      {
+        "id": "full-text-search",
+        "title": "Full-Text Search & Search Indexing",
+        "content": `> "Normal filtering" (\`status = 'active'\`) aur "full-text search" (\`"javascript runtime"\` ko relevant articles se match karna) alag problems hain.
+
+## Inverted index — search ka core
+
+Search engine document ko store karne se pehle **analyze** karta hai, phir ek **inverted index** banata hai: har word -> usme wo word kin documents mein hai.
+
+\`\`\`flow
+"React Developer Node.js"
+Analysis: lowercase -> tokenize -> stem -> stopwords remove
+Tokens: react, develop, node, js
+Inverted index:  react -> [doc1, doc5],  node -> [doc1, doc9], ...
+\`\`\`
+
+Search time par query bhi same analyzer se guzarti hai, phir index se matching docs O(1)-ish nikalte hain (scan nahi).
+
+## Analysis steps (analyzer)
+
+- **Tokenization** — text ko words mein todna
+- **Lowercasing**
+- **Stemming / lemmatization** — "running", "ran", "runs" -> "run"
+- **Stopwords** — "the", "is", "a" hata dena (optional)
+- **Synonyms** — "js" = "javascript"
+- **n-grams / edge-grams** — autocomplete + fuzzy ke liye
+
+## Relevance / scoring
+
+Match hone ke baad results **score** ke order mein. Roughly (BM25):
+
+- **Term frequency** — word document mein jitni baar, utna relevant
+- **Inverse document frequency** — jo word rare hai wo zyada matter karta hai
+- **Field boost** — title mein match > body mein match
+- **Freshness / popularity** — custom signals
+
+\`\`\`flow
+Search: "React Developer"
+1. "React Developer Guide"   score 9.1
+2. "Frontend Developer"      score 3.4
+3. "JavaScript Basics"       score 1.2
+\`\`\`
+
+## Filters + search + sort (real e-commerce)
+
+\`\`\`flow
+Query: "running shoes"
+Filters: brand=Nike, price 2000-5000, size=9, rating>4
+Sort: relevance | price | newest
+\`\`\`
+
+Filters exact-match (fast, cached), full-text part scored. Facets = "har brand mein kitne results" — search ke saath aggregate.
+
+## Autocomplete
+
+User types \`iph\` -> \`iPhone\`, \`iPhone 15\`, \`iPhone charger\`. Edge-ngram index ya a dedicated completion suggester; debounce on client; cache top prefixes.
+`
+      },
+      {
+        "id": "read-write-optimization",
+        "title": "Database Read/Write Optimization",
+        "content": `> Sirf DB choose karna kaafi nahi — data ko efficiently read/write kaise karein wo matter karta hai. Aksar 90% traffic reads hota hai.
+
+\`\`\`flow
+100,000 req/sec = 90,000 reads + 10,000 writes  -> read optimization pehle
+\`\`\`
+
+## Read optimization
+
+- **Indexing** — filter/sort/join columns par index (Ch: Indexing). Verify with \`EXPLAIN\`.
+- **Caching** — hot reads Redis mein (Ch: Caching). DB hits gir jaate hain.
+- **Read replicas** — reads ko replicas par baanto, primary sirf writes (Ch: Replication). Read-after-write flows primary se.
+- **Projection** — sirf zaroori columns/fields lo, \`SELECT *\` nahi (kam IO, kam network)
+- **Pagination** — cursor-based; deep offset avoid
+- **Denormalization / materialized views** — mehengi joins/aggregations ko precompute
+- **Covering index** — index mein hi saara data ho -> table touch hi nahi
+
+## Write optimization
+
+- **Batch / bulk writes** — 1000 alag INSERT ke bajaye ek bulk insert (kam round-trips, kam WAL flushes)
+- **Async / queue** — non-critical writes (analytics, audit log, notifications, search index update) request path se hata kar queue -> worker
+- **Write-behind cache** — carefully, non-critical data ke liye
+- **Fewer indexes on write-heavy tables** — har index write ko slow karta hai
+- **Bulk upsert** aur \`ON CONFLICT\` for idempotent writes
+
+## N+1 query problem
+
+\`\`\`flow
+1 query: get 100 users
+then per user: get their orders  -> 100 more queries
+Total = 1 + 100 = 101 queries  (each a round trip!)
+\`\`\`
+
+Fix: **1 query for users + 1 query \`WHERE userId IN (...)\` for all orders** (2 total), phir memory mein group karo. ORMs mein: eager loading / \`include\` / \`populate\` / DataLoader (batching). Ya ek JOIN.
+
+## Rule
+
+Pehle measure (slow query log, \`EXPLAIN\`, APM), phir target the actual bottleneck — blind optimization se bachо.
+`
+      },
+      {
+        "id": "search-optimization-recap",
+        "title": "Quick Recap",
+        "content": `**Search engine / Elasticsearch** — dedicated system for keyword search, typo tolerance, relevance, filters, autocomplete. DB = source of truth; search index is **derived** and reindexable. Sync via dual-write, outbox/event, or CDC. Concepts: index, document, mapping, shard/replica, \`_score\`.
+
+**Full-text search** — analyze text (tokenize, lowercase, stem, synonyms) -> build an **inverted index** (word -> docs). Query analyzed the same way -> fast lookup, no scan. Relevance ~ BM25 (term freq, inverse doc freq, field boost). Autocomplete via edge-ngrams.
+
+**Read optimization** — indexing, caching, read replicas, projection, cursor pagination, denormalization / materialized views, covering indexes.
+
+**Write optimization** — batch/bulk writes, async via queue for non-critical writes, fewer indexes on write-heavy tables, idempotent upserts.
+
+**N+1 problem** — 1 query then 1-per-row = 1+N round trips. Fix: batch with \`WHERE id IN (...)\` or a JOIN / eager loading / DataLoader.
+
+## Flow
+
+\`\`\`flow
+User -> Search API
+-> Redis (cached queries)  |  -> Search engine (keyword + filter + sort + relevance)
+Database = source of truth, feeds the search index
+\`\`\`
+
+One line each:
+
+- **Search engine** -> big/complex search ke liye optimized system.
+- **Elasticsearch** -> distributed full-text search + filters + relevance.
+- **Inverted index** -> word -> documents mapping, search ko O(scan) se bachata hai.
+- **Read optimization** -> index + cache + replicas + query tuning.
+- **Write optimization** -> batch + async + fewer indexes.
+- **N+1** -> ek query ke baad har row ke liye alag query -> batch/JOIN se fix.
+`
+      }
+    ]
+  },
+  {
+    "id": "delivery-idempotency-ratelimit",
+    "title": "Delivery Guarantees, Idempotency & Rate-Limit Algorithms",
+    "topics": [
+      {
+        "id": "message-delivery-guarantees",
+        "title": "Message Delivery Guarantees",
+        "content": `> Queue / event system use karte waqt: ek message **kitni baar** process ho sakta hai? 3 models.
+
+## At-most-once
+
+Message zyada se zyada 1 baar. Fail hua to retry nahi -> **message lost** ho sakta hai.
+
+\`\`\`flow
+Message -> Consumer -> (crash) -> message gone
+\`\`\`
+
+Fast, no duplicates, but data loss. OK for: metrics samples, live telemetry jahan ek missed reading matter nahi karti.
+
+## At-least-once
+
+Message **kam se kam 1 baar**. Ack na mile to retry -> loss nahi, but **duplicate** possible.
+
+\`\`\`flow
+Consumer processes OK -> ack lost on network -> broker re-delivers -> processed AGAIN
+\`\`\`
+
+Yeh **default** hai zyadaatar queues/Kafka mein. Isliye consumer **idempotent** hona chahiye. OK for: almost everything, jab tak duplicate handle ho.
+
+## Exactly-once
+
+Goal: effect exactly ek baar. True exactly-once distributed systems mein bahut mushkil/mehenga (needs transactional coordination between broker + your store). Kafka "exactly-once" bhi ek closed loop (Kafka->Kafka) ke andar hi hai.
+
+**Practical answer: at-least-once delivery + idempotent processing = effectively-once.**
+
+## Summary
+
+| Model | Loss | Duplicate | Use |
+| --- | --- | --- | --- |
+| At-most-once | possible | no | fire-and-forget telemetry |
+| At-least-once | no | possible | default; pair with idempotency |
+| Exactly-once | no | no | rare; expensive; usually approximated |
+`
+      },
+      {
+        "id": "idempotency",
+        "title": "Idempotency",
+        "content": `> Idempotent = same operation ko 2 baar (ya 10 baar) chalao, **final effect wahi** — jaise ek hi baar chalaya ho.
+
+## Kyun zaroori
+
+Networks retry karte hain. Ek \`POST /payment\` succeed hua but response network mein kho gaya -> client retry karta hai.
+
+\`\`\`flow
+POST /payment (Rs 100) -> charged -> response lost
+client retries -> Rs 100 charged AGAIN  (bug!)
+\`\`\`
+
+GET/PUT/DELETE naturally idempotent hain. **POST / "create" / "process" nahi** — inko explicitly idempotent banana padta hai.
+
+## Idempotency Key pattern
+
+Client har unique operation ke liye ek key generate karke bhejta hai (UUID). Server us key ka result yaad rakhta hai.
+
+\`\`\`flow
+Client -> header: Idempotency-Key: abc123
+Server:
+  key seen before?
+    YES -> return the stored earlier response (don't re-process)
+    NO  -> process -> store (key -> result) -> return
+\`\`\`
+
+Implementation notes:
+
+- Key ko **process se pehle** insert karo (unique constraint) — concurrent retries mein sirf ek jeete, baaki "in progress" ya wait
+- Stored result ko TTL do (e.g. 24h)
+- Key ko request ke **hash** se bind karo -> same key + alag body = error (misuse pakdo)
+
+## Idempotency + Queue (the common pattern)
+
+At-least-once queue duplicate deliver karti hai:
+
+\`\`\`flow
+Message A -> Consumer -> process -> mark A done (in DB)
+Message A (redelivered) -> Consumer -> "A already done" -> skip
+\`\`\`
+
+Dedup key = message id ya business key (orderId). "Processed message ids" table / Redis set + TTL.
+
+## Kahan chahiye
+
+Payments, refunds, order/booking creation, "send once" emails/SMS, inventory decrement, any retryable critical POST.
+`
+      },
+      {
+        "id": "rate-limiting-algorithms",
+        "title": "Rate Limiting Algorithms",
+        "content": `> (Rate limiting kyun — Ch: API Gateway & Rate Limiting. Yahan algorithms ki depth.)
+
+## A. Fixed Window
+
+Har fixed interval (e.g. har calendar minute) mein ek counter, limit tak. Window badalte hi reset.
+
+\`\`\`flow
+10:00:00-10:01:00 -> allow first 100
+10:01:00 -> counter = 0
+\`\`\`
+
+Simple, memory = 1 counter per key. **Problem — boundary burst:**
+
+\`\`\`flow
+10:00:59 -> 100 requests   +   10:01:00 -> 100 requests
+= ~200 requests in ~1 second (limit "100/min" toota)
+\`\`\`
+
+## B. Sliding Window
+
+Rolling last-60-seconds ko dekhta hai, fixed boundary nahi.
+
+- **Sliding log** — har request ka timestamp store; count = last 60s ke timestamps. Accurate, but memory per request.
+- **Sliding window counter** — current + previous fixed window ka weighted blend. ~Accurate, cheap. Common production choice.
+
+\`\`\`flow
+now ----[ <-- 60s window --> ]
+count = requests whose timestamp is within the last 60s
+\`\`\`
+
+## C. Token Bucket
+
+Bucket mein tokens, fixed rate se refill (e.g. 10/sec), capacity capped (e.g. 100). Har request 1 token leti hai; token nahi to reject (ya wait).
+
+\`\`\`flow
+refill: +10 tokens/sec (max 100)
+request -> take 1 token -> have token? allow : 429
+\`\`\`
+
+Idle time mein tokens jama -> **controlled bursts** allow (100 tak), long-run rate = refill rate. Sabse popular (AWS, Stripe style).
+
+## D. Leaky Bucket
+
+Requests ek queue mein aati hain, fixed rate se "leak" (process) hoti hain. Output rate **bilkul smooth** — bursts ko flatten karta hai (queue full -> drop).
+
+## Distributed (multi-server)
+
+Counter/tokens ek **shared Redis** key mein, warna har server apna limit rakhega aur real limit N-guna. Atomic: \`INCR\` + \`EXPIRE\`, ya a Lua script (token bucket ke liye check-refill-take ek atomic step mein).
+
+\`\`\`flow
+rate:user:123 -> count 87, TTL 60s
+next: 88 ... 100 allow ... 101 -> 429 + Retry-After
+\`\`\`
+
+| Algorithm | Bursts | Accuracy | Cost |
+| --- | --- | --- | --- |
+| Fixed window | boundary spike | low | tiny |
+| Sliding window | smooth | high | low-med |
+| Token bucket | controlled bursts | high | low |
+| Leaky bucket | fully smoothed | high | low-med |
+`
+      },
+      {
+        "id": "delivery-idempotency-recap",
+        "title": "Quick Recap",
+        "content": `**Delivery guarantees** — At-most-once (loss OK, no dup), At-least-once (no loss, dup possible — the default), Exactly-once (hard/rare). Production reality = **at-least-once + idempotent consumer = effectively-once**.
+
+**Idempotency** — same op repeated -> same final effect. GET/PUT/DELETE free; POST/create needs an **Idempotency-Key**: server stores key->result, returns the stored result on retry. Insert key before processing (unique constraint). For queues: dedup on message/business id.
+
+**Rate-limit algorithms** — Fixed window (simple, boundary burst), Sliding window (smooth, accurate), Token bucket (controlled bursts, most popular), Leaky bucket (fully smoothed output). Multi-server -> shared Redis counter, atomic ops.
+
+## Payment flow (all three together)
+
+\`\`\`flow
+Client -> Rate Limiter (token bucket, Redis)
+-> Payment API -> Idempotency check (key seen? return stored : process)
+-> Payment Service -> Queue (at-least-once)
+-> Consumer -> idempotency check -> Database
+\`\`\`
+
+Retry after network failure -> same key -> previous result. Duplicate queue message -> consumer skips (already processed).
+
+One line each:
+
+- **At-least-once** -> retry ho sakta hai, duplicate possible -> idempotent consumer.
+- **Idempotency** -> repeated operation ka unwanted double-effect roko (idempotency key).
+- **Token bucket** -> tokens consume + refill; controlled bursts, capped average rate.
+`
+      }
+    ]
+  },
+  {
+    "id": "versioning-webhooks-scheduling",
+    "title": "API Versioning, Webhooks & Job Scheduling",
+    "topics": [
+      {
+        "id": "api-versioning",
+        "title": "API Versioning & Backward Compatibility",
+        "content": `> API update karte waqt #1 rule: **existing clients break nahi hone chahiye.** Mobile apps mahino purane version par chal rahe hote hain — unhe force-update nahi kar sakte.
+
+## Backward-compatible vs breaking
+
+- **Compatible (safe):** naya optional field add karna, naya endpoint, naya optional query param, response mein naya field. Purane client ignore kar denge.
+- **Breaking:** field rename/remove (\`name\` -> \`firstName\`+\`lastName\`), type change, required param add, meaning badalna, error format change, endpoint remove.
+
+\`\`\`flow
+Safe:     { id, name }  ->  { id, name, email }
+Breaking: { id, name }  ->  { id, firstName, lastName }   (old client expects "name")
+\`\`\`
+
+## Versioning styles
+
+- **URL path** — \`/api/v1/users\`, \`/api/v2/users\` — sabse visible/common, cache-friendly
+- **Header** — \`Accept: application/vnd.app.v2+json\` — clean URLs, kam visible
+- **Query param** — \`/users?version=2\` — simple, thoda hacky
+
+\`\`\`flow
+Client -> API Gateway -> /v1/users (old logic)  |  /v2/users (new logic)
+\`\`\`
+
+## Production lifecycle
+
+\`\`\`flow
+Add new (v2) alongside v1
+Announce + document deprecation (deadline)
+Migrate clients (dashboards, SDKs, emails)
+Sunset v1 (return 410 Gone after date)
+\`\`\`
+
+## Practical
+
+- Har chhote change ke liye \`v2\` mat banao — backward-compatible additions same version mein.
+- v1/v2 ko alag services na banao; ek codebase, ek transformation layer jo internal model ko version-specific response mein map kare.
+- Consumer-driven contract tests se breaking change CI mein pakdo.
+- Clients ko **tolerant reader** likhne ko encourage karo (unknown fields ignore karein).
+`
+      },
+      {
+        "id": "webhooks-reliability",
+        "title": "Webhooks & Webhook Reliability",
+        "content": `> Webhook = ek system doosre ko HTTP POST karke batata hai "ye event hua" (Stripe -> tumhara server: \`payment.succeeded\`). Polling ka opposite — provider tumhe push karta hai.
+
+\`\`\`flow
+Customer pays -> Stripe -> POST /webhooks/stripe -> your backend -> order = PAID
+\`\`\`
+
+## Kyun webhook, client-confirm nahi
+
+Client tab band kar sakta hai, network drop ho sakta hai, ya client tampered ho sakta hai. Provider ka webhook = **server-to-server source of truth** for "payment actually succeeded".
+
+## Problem 1: duplicate events
+
+Providers **at-least-once** deliver karte hain — same event 2-3 baar aa sakta hai (retry after a slow/failed response).
+
+\`\`\`flow
+payment.succeeded  x3  ->  order processed 3 times?  (bug)
+\`\`\`
+
+Fix: **idempotent handler.** Event ka unique id (\`evt_123\`) ek \`webhook_events\` table/Redis set mein store karo. Aaya hua id -> skip.
+
+\`\`\`flow
+receive -> seen evt_123?  YES -> 200 OK (do nothing)
+                          NO  -> process -> store evt_123 -> 200 OK
+\`\`\`
+
+## Problem 2: security (public endpoint)
+
+Koi bhi \`POST /webhooks/payment\` kar sakta hai. Provider ek **signature** bhejta hai (HMAC of body with a shared secret) in a header.
+
+\`\`\`flow
+verify signature (raw body!) -> valid? process : 401
+\`\`\`
+
+- Raw body par verify karo (JSON re-serialize se signature toot jaata hai)
+- Timestamp check karo (replay attack — purana signed payload dobara)
+- HTTPS only
+
+## Problem 3: reliability + speed
+
+Provider expect karta hai fast \`2xx\` (warna wo retry karega, aur eventually give up). Heavy work handler mein mat karo.
+
+\`\`\`flow
+Webhook API: verify signature -> check idempotency -> enqueue -> return 200 OK (fast)
+Worker (async): business logic -> DB -> external calls
+\`\`\`
+
+- Handler slow/failed -> provider retries (exponential backoff, hours-days). Design for that.
+- Missed webhooks ke liye a reconciliation job (provider se periodically fetch karke compare).
+`
+      },
+      {
+        "id": "distributed-scheduling",
+        "title": "Distributed Job Scheduling / Cron at Scale",
+        "content": `> Ek server par \`cron.schedule("0 0 * * *", generateReport)\` simple hai. 10 servers par — sabne wo job chala di.
+
+\`\`\`flow
+Server 1..10 -> har ek ne "generate report" chalaya -> 10x work, 10x emails, race conditions
+\`\`\`
+
+## Goal
+
+Scheduled job **exactly ek instance** par chale (ya at-least-once + idempotent).
+
+## Option A: distributed lock (small scale)
+
+Har server cron ke waqt Redis lock leने ki koshish kare; sirf ek jeetta hai.
+
+\`\`\`flow
+SET job:daily-report <token> NX EX 300
+Server 1 -> acquired -> run job -> release
+Server 2..10 -> exists -> skip
+\`\`\`
+
+TTL job ke max runtime se thoda bada; job crash hua to next run pe wapas.
+
+## Option B: scheduler -> queue -> workers (recommended)
+
+Scheduling ko execution se **alag** karo. Ek dedicated scheduler (single leader, ya a managed cron: cloud scheduler, Kubernetes CronJob, Temporal, BullMQ repeatable jobs) sirf ek message enqueue karta hai. Workers (jitne chahe) queue se uthate hain.
+
+\`\`\`flow
+Scheduler (12 AM) -> enqueue "monthly-reports"
+Queue -> Worker 1 (Report A) · Worker 2 (Report B) · Worker 3 (Report C)
+\`\`\`
+
+Faayda: parallelism, retries, DLQ, visibility — sab queue se free. Scheduler thin.
+
+## Reliability
+
+- **Idempotent jobs** — job ek "run key" (\`report:2026-09\`) ke saath; already done -> skip. (Double-trigger ya retry safe.)
+- **Retry with backoff**, then **DLQ** for repeated failures + alert
+- **Missed runs** — server down tha 12 AM par? Managed schedulers "catch up" kar sakte hain; decide karo chahiye ya nahi
+- **Long jobs** — chunk karo (100k users -> 100 jobs of 1k), warna ek failure poora job dobara
+
+> Principle (teeno topics common): failure assume karo, duplicate execution assume karo, system ko retry-safe / idempotent banao.
+`
+      },
+      {
+        "id": "versioning-webhooks-recap",
+        "title": "Quick Recap",
+        "content": `**API Versioning** — clients (especially mobile) purane version par chalte hain; unhe break mat karo. Backward-compatible = add optional fields/endpoints. Breaking = rename/remove/retype. Styles: URL path (\`/v1\`), header, query. Lifecycle: add -> deprecate (with deadline) -> migrate -> sunset. Don't \`v2\` every change; one codebase + a response-mapping layer.
+
+**Webhooks** — provider POSTs "event happened" to your public endpoint (source of truth for payments etc.). Handle: (1) **verify signature** on the raw body + timestamp, (2) **idempotency** by event id (at-least-once delivery = duplicates), (3) **respond fast** — verify + enqueue + 200, do heavy work in a worker. Add a reconciliation job for missed events.
+
+**Distributed scheduling** — N servers each running cron = N runs. Fix: distributed lock (small), or **scheduler -> queue -> workers** (recommended: thin scheduler enqueues once, workers process with retries/DLQ). Jobs idempotent with a run key; chunk long jobs.
+
+## Production flow
+
+\`\`\`flow
+Client -> API Gateway -> API v1 / v2 -> Backend -> DB
+Payment: Provider -> Webhook API (verify + idempotency) -> Queue -> Worker -> DB
+Scheduled: Scheduler -> (lock / single trigger) -> Queue -> Workers -> DB
+\`\`\`
+
+One line each:
+
+- **API versioning** -> API badlo bina purane clients toде.
+- **Webhook** -> external system se event push receive karna (verify + idempotent + fast ack).
+- **Distributed scheduler** -> multi-server par scheduled job ko ek hi baar (safely) chalana.
+`
+      }
+    ]
   }
 ];
