@@ -10,7 +10,7 @@ const CategoryNav: React.FC<CategoryNavProps> = ({ categories }) => (
       <a
         key={cat.id}
         href={`#${cat.id}`}
-        className="shrink-0 snap-start rounded-full border border-black/10 px-3 py-1.5 text-xs font-medium whitespace-nowrap text-gray-600 transition-colors hover:border-orange-500 hover:text-orange-600 dark:border-white/10 dark:text-gray-300 dark:hover:text-orange-400"
+        className="shrink-0 snap-start rounded-full border border-black/10 px-3 py-1.5 text-xs font-medium whitespace-nowrap text-gray-600 transition-colors hover:border-[#a9885d] hover:text-[#96703f] dark:border-white/10 dark:text-gray-300 dark:hover:text-[#cdb083]"
       >
         {cat.title} <span className="text-gray-400">({cat.count})</span>
       </a>

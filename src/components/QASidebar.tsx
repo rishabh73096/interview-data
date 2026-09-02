@@ -43,8 +43,8 @@ const QASidebar: React.FC<QASidebarProps> = ({ categories }) => {
             href={`#${cat.id}`}
             className={`flex items-center justify-between gap-2 rounded-lg border-l-2 px-3 py-2 text-sm transition-colors ${
               isActive
-                ? 'border-orange-500 bg-orange-50 font-medium text-orange-600 dark:bg-orange-500/10 dark:text-orange-400'
-                : 'border-transparent text-gray-600 hover:border-orange-300 hover:text-orange-600 dark:text-gray-300 dark:hover:text-orange-400'
+                ? 'border-[#a9885d] bg-[#efe6d4] font-medium text-[#7f5f37] dark:bg-[#9a7b53]/14 dark:text-[#cdb083]'
+                : 'border-transparent text-gray-600 hover:border-[#c1a67d] hover:text-[#96703f] dark:text-gray-300 dark:hover:text-[#cdb083]'
             }`}
           >
             <span>{cat.title}</span>

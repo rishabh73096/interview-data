@@ -153,9 +153,9 @@ const HomePage: React.FC = () => {
           {statTiles.map((tile) => (
             <div
               key={tile.label}
-              className="rounded-xl border border-orange-900/8 bg-orange-50/60 px-4 py-4 text-center dark:border-orange-400/10 dark:bg-orange-500/5"
+              className="rounded-xl border border-[#6b5836]/12 bg-[#f0e7d6]/55 px-4 py-4 text-center dark:border-white/10 dark:bg-[#a9885d]/8"
             >
-              <p className="bg-linear-to-br from-orange-600 via-amber-500 to-yellow-500 bg-clip-text text-3xl font-bold text-transparent sm:text-4xl">
+              <p className="bg-linear-to-br from-[#93764f] via-[#a98c62] to-[#c7ad82] bg-clip-text text-3xl font-bold text-transparent sm:text-4xl">
                 {tile.value}
               </p>
               <p className="mt-1 text-xs text-gray-500 sm:text-sm dark:text-gray-400">{tile.label}</p>
@@ -166,7 +166,7 @@ const HomePage: React.FC = () => {
 
       {/* what's inside — bar chart */}
       <section className="pb-10 sm:pb-14">
-        <div className="rounded-xl border border-orange-900/8 bg-orange-50/60 p-5 sm:p-7 dark:border-orange-400/10 dark:bg-orange-500/5">
+        <div className="rounded-xl border border-[#6b5836]/12 bg-[#f0e7d6]/55 p-5 sm:p-7 dark:border-white/10 dark:bg-[#a9885d]/8">
           <h2 className="mb-5 text-base font-semibold text-gray-900 sm:text-lg dark:text-white">
             What&apos;s inside, by the numbers
           </h2>
@@ -179,9 +179,9 @@ const HomePage: React.FC = () => {
                     <span className="font-medium text-gray-700 dark:text-gray-200">{section.title}</span>
                     <span className="font-semibold text-gray-900 tabular-nums dark:text-white">{section.count}</span>
                   </div>
-                  <div className="h-3 w-full rounded-full bg-orange-500/10 dark:bg-orange-400/10">
+                  <div className="h-3 w-full rounded-full bg-[#9a7b53]/14 dark:bg-[#c9b48f]/12">
                     <div
-                      className="h-3 rounded-full bg-linear-to-r from-orange-600 to-amber-500"
+                      className="h-3 rounded-full bg-linear-to-r from-[#93764f] to-[#c1a67d]"
                       style={{ width: `${widthPct}%` }}
                     />
                   </div>
@@ -199,10 +199,10 @@ const HomePage: React.FC = () => {
             <a
               key={section.href}
               href={section.href}
-              className="group flex flex-col gap-4 rounded-xl border border-orange-900/8 bg-orange-50/60 p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-7 dark:border-orange-400/10 dark:bg-orange-500/5"
+              className="group flex flex-col gap-4 rounded-xl border border-[#6b5836]/12 bg-[#f0e7d6]/55 p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-7 dark:border-white/10 dark:bg-[#a9885d]/8"
             >
               <div className="flex items-center justify-between">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-orange-600 via-amber-500 to-yellow-400 text-white shadow-sm">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-[#93764f] via-[#a98c62] to-[#c7ad82] text-white shadow-sm">
                   {section.icon}
                 </span>
                 <span className="rounded-full border border-black/10 px-3 py-1 text-xs font-medium text-gray-500 dark:border-white/10 dark:text-gray-400">
@@ -212,7 +212,7 @@ const HomePage: React.FC = () => {
               <div>
                 <h2 className="mb-1.5 flex items-center gap-1.5 text-lg font-semibold text-gray-900 sm:text-xl dark:text-white">
                   {section.title}
-                  <span className="text-gray-400 transition-transform group-hover:translate-x-1 group-hover:text-orange-500">
+                  <span className="text-gray-400 transition-transform group-hover:translate-x-1 group-hover:text-[#a97f4a]">
                     →
                   </span>
                 </h2>
@@ -234,13 +234,13 @@ const HomePage: React.FC = () => {
         <div className="grid grid-cols-1 gap-4 sm:gap-0 sm:grid-cols-2 md:grid-cols-4">
           {steps.map((step, idx) => (
             <div key={step.n} className="relative flex flex-col items-center gap-3 px-4 text-center">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-orange-600 via-amber-500 to-yellow-400 text-sm font-bold text-white shadow-sm">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-[#93764f] via-[#a98c62] to-[#c7ad82] text-sm font-bold text-white shadow-sm">
                 {step.n}
               </span>
               <h3 className="text-base font-semibold text-gray-900 dark:text-white">{step.title}</h3>
               <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-300">{step.description}</p>
               {idx < steps.length - 1 && (
-                <span className="hidden text-2xl leading-none text-orange-400/60 md:absolute md:top-4 md:-right-2 md:block dark:text-orange-500/40">
+                <span className="hidden text-2xl leading-none text-[#c1a67d]/60 md:absolute md:top-4 md:-right-2 md:block dark:text-[#a9885d]/40">
                   →
                 </span>
               )}

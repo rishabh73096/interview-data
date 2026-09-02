@@ -71,7 +71,7 @@ const CodeRunner: React.FC<CodeRunnerProps> = ({ initialCode }) => {
           </button>
           <button
             onClick={run}
-            className="rounded-md bg-linear-to-r from-orange-600 via-amber-500 to-yellow-400 px-3 py-1 text-xs font-semibold text-white shadow-sm transition-transform hover:scale-105"
+            className="rounded-md bg-linear-to-r from-[#93764f] via-[#a98c62] to-[#c7ad82] px-3 py-1 text-xs font-semibold text-white shadow-sm transition-transform hover:scale-105"
           >
             ▶ Run
           </button>

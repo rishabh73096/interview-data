@@ -129,7 +129,7 @@ function renderInline(text: string, key: string | number): React.ReactNode {
             <a
               key={idx}
               href={`#${target.trim()}`}
-              className="font-medium text-orange-700 underline decoration-orange-400/40 underline-offset-2 hover:decoration-orange-500 dark:text-orange-400"
+              className="font-medium text-[#7f5f37] underline decoration-[#c1a67d]/50 underline-offset-2 hover:decoration-[#a9885d] dark:text-[#cdb083]"
             >
               {(label ?? target).trim().replace(/-/g, ' ')}
             </a>
@@ -139,7 +139,7 @@ function renderInline(text: string, key: string | number): React.ReactNode {
           return (
             <code
               key={idx}
-              className="rounded bg-orange-500/8 px-1.5 py-0.5 font-mono text-[0.85em] break-all text-orange-700 dark:bg-orange-400/10 dark:text-orange-300"
+              className="rounded bg-[#9a7b53]/12 px-1.5 py-0.5 font-mono text-[0.85em] break-all text-[#7f5f37] dark:bg-[#c9b48f]/12 dark:text-[#d8bf94]"
             >
               {part.slice(1, -1)}
             </code>
@@ -158,14 +158,14 @@ const DiagramBox: React.FC<{ text: string }> = ({ text }) => (
 );
 
 const FlowChart: React.FC<{ steps: string[] }> = ({ steps }) => (
-  <div className="mb-5 flex flex-col items-center gap-0 rounded-lg border border-orange-900/8 bg-orange-500/4 py-5 dark:border-orange-400/10 dark:bg-orange-400/4">
+  <div className="mb-5 flex flex-col items-center gap-0 rounded-lg border border-[#6b5836]/12 bg-[#a9885d]/5 py-5 dark:border-white/10 dark:bg-[#c9b48f]/5">
     {steps.map((step, idx) => (
       <React.Fragment key={idx}>
-        <div className="rounded-lg border border-orange-500/30 bg-orange-50/80 px-4 py-2 text-center text-sm font-medium text-gray-800 shadow-sm dark:bg-[#20201c] dark:text-gray-100">
+        <div className="rounded-lg border border-[#9a7b53]/35 bg-[#f1e8d6]/80 px-4 py-2 text-center text-sm font-medium text-gray-800 shadow-sm dark:bg-[#20201c] dark:text-gray-100">
           {renderInline(step, idx)}
         </div>
         {idx < steps.length - 1 && (
-          <span className="py-1 text-base leading-none text-orange-500/70 dark:text-orange-400/70">↓</span>
+          <span className="py-1 text-base leading-none text-[#a9885d]/70 dark:text-[#cdb083]/70">↓</span>
         )}
       </React.Fragment>
     ))}
@@ -206,17 +206,17 @@ const DocRenderer: React.FC<{ content: string }> = ({ content }) => {
             return (
               <div
                 key={idx}
-                className="mb-4 rounded-r-lg border-l-4 border-orange-500 bg-orange-500/5 py-3 pr-4 pl-4 text-[15px] text-gray-700 italic dark:bg-orange-400/10 dark:text-gray-300"
+                className="mb-4 rounded-r-lg border-l-4 border-[#a9885d] bg-[#a9885d]/8 py-3 pr-4 pl-4 text-[15px] text-gray-700 italic dark:bg-[#c9b48f]/12 dark:text-gray-300"
               >
                 {renderInline(block.text, idx)}
               </div>
             );
           case 'table':
             return (
-              <div key={idx} className="mb-5 overflow-x-auto rounded-lg border border-orange-900/8 dark:border-orange-400/10">
+              <div key={idx} className="mb-5 overflow-x-auto rounded-lg border border-[#6b5836]/12 dark:border-white/10">
                 <table className="w-full min-w-[420px] text-left text-sm">
                   <thead>
-                    <tr className="bg-orange-500/5 dark:bg-orange-400/5">
+                    <tr className="bg-[#a9885d]/8 dark:bg-[#c9b48f]/6">
                       {block.headers.map((h, hIdx) => (
                         <th
                           key={hIdx}

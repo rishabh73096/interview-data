@@ -66,7 +66,7 @@ const CodingQuestionsClient: React.FC = () => {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search a question…"
             inputMode="search"
-            className="w-full rounded-full border border-orange-900/8 bg-orange-50/60 px-5 py-3 text-sm shadow-sm outline-none transition-colors focus:border-orange-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
+            className="w-full rounded-full border border-[#6b5836]/12 bg-[#f0e7d6]/55 px-5 py-3 text-sm shadow-sm outline-none transition-colors focus:border-[#a9885d] dark:border-white/10 dark:bg-white/5 dark:text-white"
           />
           {normalizedQuery && (
             <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
@@ -88,12 +88,12 @@ const CodingQuestionsClient: React.FC = () => {
         {filtered.map((cat) => (
           <section key={cat.title} id={slugify(cat.title)} className="scroll-mt-24">
             <h2 className="mb-4 flex items-center gap-3 text-lg font-semibold text-gray-900 sm:text-xl dark:text-white">
-              <span className="h-2 w-2 shrink-0 rounded-full bg-linear-to-r from-orange-600 to-yellow-400" />
+              <span className="h-2 w-2 shrink-0 rounded-full bg-linear-to-r from-[#93764f] to-[#c1a67d]" />
               {cat.title}
               <span className="text-sm font-normal text-gray-400">{cat.items.length}</span>
             </h2>
 
-            <div className="overflow-hidden rounded-xl border border-orange-900/8 bg-orange-50/60 shadow-sm dark:border-orange-400/10 dark:bg-orange-500/5">
+            <div className="overflow-hidden rounded-xl border border-[#6b5836]/12 bg-[#f0e7d6]/55 shadow-sm dark:border-white/10 dark:bg-[#a9885d]/8">
               {cat.items.map((item, idx) => {
                 const key = `${cat.title}-${idx}`;
                 const isOpen = expanded.has(key);

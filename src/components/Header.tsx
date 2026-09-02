@@ -20,10 +20,10 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-orange-900/8 bg-orange-50/85 backdrop-blur-md dark:border-white/8 dark:bg-[#181511]/85">
+    <header className="sticky top-0 z-50 border-b border-[#6b5836]/12 bg-[#f4ecdd]/85 backdrop-blur-md dark:border-white/8 dark:bg-[#181511]/85">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4">
         <a href="/" className="flex min-w-0 items-center gap-2.5 sm:gap-3">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-orange-600 via-amber-500 to-yellow-400 font-mono text-xs font-bold text-white shadow-sm sm:h-9 sm:w-9 sm:text-sm">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-[#93764f] via-[#a98c62] to-[#c7ad82] font-mono text-xs font-bold text-white shadow-sm sm:h-9 sm:w-9 sm:text-sm">
             {'</>'}
           </span>
           <div className="min-w-0 leading-tight">
@@ -62,7 +62,7 @@ const Header: React.FC = () => {
 
         <a
           href="/components"
-          className="hidden shrink-0 rounded-full bg-linear-to-r from-orange-600 via-amber-500 to-yellow-400 px-3 py-1 text-xs font-semibold text-white shadow-sm transition-transform hover:scale-105 sm:inline-block"
+          className="hidden shrink-0 rounded-full bg-linear-to-r from-[#93764f] via-[#a98c62] to-[#c7ad82] px-3 py-1 text-xs font-semibold text-white shadow-sm transition-transform hover:scale-105 sm:inline-block"
         >
           26 Components
         </a>
@@ -160,7 +160,7 @@ const Header: React.FC = () => {
             <a
               href="/components"
               onClick={() => setMenuOpen(false)}
-              className="mt-1 w-fit rounded-full bg-linear-to-r from-orange-600 via-amber-500 to-yellow-400 px-3 py-1 text-xs font-semibold text-white shadow-sm"
+              className="mt-1 w-fit rounded-full bg-linear-to-r from-[#93764f] via-[#a98c62] to-[#c7ad82] px-3 py-1 text-xs font-semibold text-white shadow-sm"
             >
               26 Components
             </a>

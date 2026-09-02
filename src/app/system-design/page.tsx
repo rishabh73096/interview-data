@@ -22,7 +22,7 @@ const SidebarLinks: React.FC<{ activeId: string; onNavigate?: () => void }> = ({
               onClick={onNavigate}
               className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${
                 activeId === topic.id
-                  ? 'bg-orange-500/10 font-medium text-orange-700 dark:text-orange-400'
+                  ? 'bg-[#9a7b53]/14 font-medium text-[#7f5f37] dark:text-[#cdb083]'
                   : 'text-gray-600 hover:bg-black/5 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white'
               }`}
             >
@@ -39,7 +39,7 @@ const SidebarLinks: React.FC<{ activeId: string; onNavigate?: () => void }> = ({
         onClick={onNavigate}
         className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-black/5 dark:text-gray-200 dark:hover:bg-white/10"
       >
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-linear-to-br from-orange-600 via-amber-500 to-yellow-400 text-[10px] font-bold text-white">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-linear-to-br from-[#93764f] via-[#a98c62] to-[#c7ad82] text-[10px] font-bold text-white">
           C
         </span>
         Live Components
@@ -49,7 +49,7 @@ const SidebarLinks: React.FC<{ activeId: string; onNavigate?: () => void }> = ({
         onClick={onNavigate}
         className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-black/5 dark:text-gray-200 dark:hover:bg-white/10"
       >
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-linear-to-br from-orange-600 via-amber-500 to-yellow-400 text-[10px] font-bold text-white">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-linear-to-br from-[#93764f] via-[#a98c62] to-[#c7ad82] text-[10px] font-bold text-white">
           Q
         </span>
         Quick Interview Q&amp;A
@@ -59,7 +59,7 @@ const SidebarLinks: React.FC<{ activeId: string; onNavigate?: () => void }> = ({
         onClick={onNavigate}
         className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-black/5 dark:text-gray-200 dark:hover:bg-white/10"
       >
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-linear-to-br from-orange-600 via-amber-500 to-yellow-400 text-[10px] font-bold text-white">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-linear-to-br from-[#93764f] via-[#a98c62] to-[#c7ad82] text-[10px] font-bold text-white">
           {'</>'}
         </span>
         Coding Practice
@@ -122,13 +122,13 @@ const SystemDesignPage: React.FC = () => {
       <div className="mb-4 lg:hidden">
         <button
           onClick={() => setMobileNavOpen((o) => !o)}
-          className="flex w-full items-center justify-between rounded-lg border border-orange-900/8 bg-orange-50/60 px-4 py-3 text-sm font-medium text-gray-700 shadow-sm dark:border-orange-400/10 dark:bg-orange-500/5 dark:text-gray-200"
+          className="flex w-full items-center justify-between rounded-lg border border-[#6b5836]/12 bg-[#f0e7d6]/55 px-4 py-3 text-sm font-medium text-gray-700 shadow-sm dark:border-white/10 dark:bg-[#a9885d]/8 dark:text-gray-200"
         >
           Contents
           <span className={`transition-transform ${mobileNavOpen ? 'rotate-180' : ''}`}>⌄</span>
         </button>
         {mobileNavOpen && (
-          <div className="mt-2 max-h-[60vh] overflow-y-auto rounded-lg border border-orange-900/8 bg-orange-50/60 p-3 shadow-sm dark:border-orange-400/10 dark:bg-orange-500/5">
+          <div className="mt-2 max-h-[60vh] overflow-y-auto rounded-lg border border-[#6b5836]/12 bg-[#f0e7d6]/55 p-3 shadow-sm dark:border-white/10 dark:bg-[#a9885d]/8">
             <SidebarLinks activeId={activeId} onNavigate={() => setMobileNavOpen(false)} />
           </div>
         )}
@@ -145,7 +145,7 @@ const SystemDesignPage: React.FC = () => {
           {systemDesignChapters.map((chapter, chIdx) => (
             <div key={chapter.id} className="mb-10 min-w-0">
               <div className="mb-5 flex items-center gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-orange-600 via-amber-500 to-yellow-400 text-sm font-bold text-white">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-[#93764f] via-[#a98c62] to-[#c7ad82] text-sm font-bold text-white">
                   {String(chIdx + 1).padStart(2, '0')}
                 </span>
                 <h2 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-white">{chapter.title}</h2>
@@ -157,7 +157,7 @@ const SystemDesignPage: React.FC = () => {
                     key={topic.id}
                     id={topic.id}
                     data-topic-id={topic.id}
-                    className="min-w-0 scroll-mt-24 rounded-xl border border-orange-900/8 bg-orange-50/60 p-5 shadow-sm sm:p-7 dark:border-orange-400/10 dark:bg-orange-500/5"
+                    className="min-w-0 scroll-mt-24 rounded-xl border border-[#6b5836]/12 bg-[#f0e7d6]/55 p-5 shadow-sm sm:p-7 dark:border-white/10 dark:bg-[#a9885d]/8"
                   >
                     <h3 className="mb-4 text-lg font-semibold text-gray-900 sm:text-xl dark:text-white">
                       {topic.title}
@@ -174,7 +174,7 @@ const SystemDesignPage: React.FC = () => {
       <button
         onClick={scrollToTop}
         aria-label="Go to top"
-        className={`fixed right-4 bottom-6 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-linear-to-br from-orange-600 via-amber-500 to-yellow-400 text-white shadow-lg transition-all duration-200 sm:right-8 sm:bottom-8 ${
+        className={`fixed right-4 bottom-6 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-linear-to-br from-[#93764f] via-[#a98c62] to-[#c7ad82] text-white shadow-lg transition-all duration-200 sm:right-8 sm:bottom-8 ${
           showGoTop ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0'
         }`}
       >

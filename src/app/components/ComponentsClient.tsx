@@ -86,7 +86,7 @@ const ComponentsClient: React.FC = () => {
           {components.map(({ name, description, Component }, index) => (
             <div
               key={name}
-              className="rounded-xl border border-orange-900/8 bg-orange-50/60 p-4 shadow-sm transition-shadow hover:shadow-md sm:p-6 dark:border-orange-400/10 dark:bg-orange-500/5"
+              className="rounded-xl border border-[#6b5836]/12 bg-[#f0e7d6]/55 p-4 shadow-sm transition-shadow hover:shadow-md sm:p-6 dark:border-white/10 dark:bg-[#a9885d]/8"
             >
               <div className="mb-4 flex items-start justify-between gap-2 sm:gap-3">
                 <div className="flex min-w-0 items-start gap-2.5 sm:gap-3">
@@ -99,7 +99,7 @@ const ComponentsClient: React.FC = () => {
                 <button
                   onClick={() => setActiveCode(name)}
                   aria-label={`View ${name} source code`}
-                  className="flex shrink-0 items-center gap-1.5 rounded-full border border-black/10 px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-orange-500 hover:text-orange-600 active:bg-black/5 sm:px-3 dark:border-white/10 dark:text-gray-300 dark:hover:text-orange-400 dark:active:bg-white/10"
+                  className="flex shrink-0 items-center gap-1.5 rounded-full border border-black/10 px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-[#a9885d] hover:text-[#96703f] active:bg-black/5 sm:px-3 dark:border-white/10 dark:text-gray-300 dark:hover:text-[#cdb083] dark:active:bg-white/10"
                 >
                   <span className="font-mono">{'</>'}</span>
                   <span className="hidden sm:inline">View Code</span>
