@@ -2421,5 +2421,1304 @@ One line each:
 `
       }
     ]
+  },
+  {
+    "id": "hashing-proxy-mesh",
+    "title": "Consistent Hashing, Reverse Proxy & Service Mesh",
+    "topics": [
+      {
+        "id": "consistent-hashing",
+        "title": "Consistent Hashing",
+        "content": `> Problem: distributed cache/shards mein "kaunsi key kaunse node par" — aur node add/remove hone par **minimum** keys move hon.
+
+## Naive: \`hash(key) % N\`
+
+\`\`\`flow
+hash(userId) % 3  ->  101->node1, 102->node2, 103->node3
+Add node4:  hash(userId) % 4  ->  almost EVERY key remaps -> cache wipe / massive rebalance
+\`\`\`
+
+\`N\` badalte hi \`% N\` sabkuch shift kar deta hai. Cache ke liye ye mass cache-miss; sharded DB ke liye ye poora data reshuffle.
+
+## Consistent hashing ka idea
+
+Ek circular hash space (0 .. 2^32) — "the ring". Nodes bhi hash hokar ring par baithte hain. Ek key ka node = ring par usse **clockwise agla node**.
+
+\`\`\`flow
+ring:  ...A......B........C...(wraps to A)
+key K -> hash -> lands between A and B -> owned by B
+\`\`\`
+
+Node D add hua -> sirf D aur uske pichhle node ke beech ki keys D par move hoti hain. Baaki sab as-is.
+
+\`\`\`flow
+Before: A ---- B -------- C
+After:  A -- D -- B ------ C   (only keys in the A..D arc moved)
+\`\`\`
+
+Node remove -> uski keys agle node par. Average movement ~ K/N keys (na ki ~K).
+
+## Virtual nodes (vnodes)
+
+Ek physical node ko ring par **kai** positions do (A -> A1..A100). Warna 3 nodes ring ko unevenly baantenge (ek node ko 60%, doosre ko 10%). Vnodes se load smooth, aur ek node hataने par uska load **kai** nodes mein bat jaata hai (ek par nahi).
+
+## Kahan
+
+Redis Cluster (hash slots — related idea), Cassandra / DynamoDB (partitioning), CDN edge selection, sticky routing, distributed caches (memcached clients).
+
+> Ye load balancer ka replacement nahi. Iska kaam: **key -> node mapping ko stable rakhna** membership badalne par.
+`
+      },
+      {
+        "id": "reverse-proxy",
+        "title": "Reverse Proxy",
+        "content": `> Client backend se seedha baat nahi karta — beech mein ek **reverse proxy** (Nginx, HAProxy, Envoy, Caddy, cloud ALB). "Reverse" kyunki wo **servers** ki taraf se khada hai (forward proxy client ki taraf se hota hai).
+
+\`\`\`flow
+Client -> Reverse Proxy -> Server 1 / Server 2 / Server 3
+\`\`\`
+
+## Kaam
+
+- **TLS termination** — HTTPS proxy par khatam, andar HTTP/mTLS. Cert management ek jagah.
+- **Load balancing** — backends mein request baantna + health checks (LB aksar reverse proxy hi hota hai)
+- **Routing** — \`/api/users\` -> user service, static -> file server
+- **Caching** — cacheable responses proxy par (micro-cache), origin load kam
+- **Compression** (gzip/brotli), **buffering** slow clients ke liye
+- **Rate limiting, IP allow/deny, WAF, request/response header manipulation**
+- **Security** — backends public internet par expose nahi; ek hardened entry point
+
+## Reverse Proxy vs LB vs API Gateway vs Service Mesh
+
+| Component | Primary job |
+| --- | --- |
+| Reverse Proxy | Client <-> backend intermediary (TLS, routing, cache, protect) |
+| Load Balancer | Traffic ko identical instances mein distribute + health check |
+| API Gateway | API-level: auth, rate limit, quotas, versioning, aggregation, per-consumer policy |
+| Service Mesh | Service-to-service (east-west) comms: mTLS, retry, timeout, tracing |
+
+Real mein overlap hota hai — Nginx LB + reverse proxy + basic gateway sab kar sakta hai; Envoy proxy hi gateway aur mesh dono mein use hota hai.
+
+\`\`\`flow
+Internet -> CDN -> Load Balancer -> Reverse Proxy -> API Gateway -> Microservices
+\`\`\`
+
+> Zaroorat ke hisaab se choose karo — har layer add karna over-engineering hai.
+`
+      },
+      {
+        "id": "service-mesh",
+        "title": "Service Mesh",
+        "content": `> Bahut si microservices ek doosre ko call karti hain. Har service ke code mein retry, timeout, mTLS, circuit breaker, tracing, metrics — same plumbing baar-baar. Service mesh isko **infra layer** mein utha leta hai.
+
+## Sidecar pattern
+
+Har service pod ke saath ek **proxy** (Envoy) deploy hota hai. Service ka saara inbound/outbound traffic apne sidecar se guzarta hai — service ko lagta hai wo localhost se baat kar raha hai.
+
+\`\`\`flow
+Order App -> Order sidecar -> (network) -> Payment sidecar -> Payment App
+\`\`\`
+
+- **Data plane** — sidecar proxies (traffic actually yahan se guzarta hai)
+- **Control plane** — central config/policy (Istiod, Linkerd control plane) jo sabhi sidecars ko configure karta hai
+
+## Kya deta hai (code change ke bina)
+
+- **mTLS** — service-to-service encryption + identity, automatically
+- **Traffic management** — canary (\`v1 90% / v2 10%\`), blue-green, mirroring, fault injection
+- **Resilience** — retry, timeout, circuit breaking, outlier detection — policy se, per route
+- **Observability** — har hop ke metrics + distributed traces + a service dependency graph, uniform
+- **Authz policy** — "service A hi service B ko call kar sakti hai"
+
+## Kab use kare
+
+\`\`\`flow
+React -> Node -> MongoDB           -> mesh ki zaroorat NAHI (over-engineering)
+30+ services, multi-team, K8s      -> mesh useful (uniform security + resilience + visibility)
+\`\`\`
+
+Cost: extra proxy per pod (latency + CPU/memory), operational complexity, ek aur cheez jo fail ho sakti hai. Libraries (resilience4j, gRPC built-ins) chhote setups ke liye kaafi hain.
+
+Ecosystem: Istio, Linkerd, Consul Connect, Cilium (eBPF-based, sidecar-less).
+`
+      },
+      {
+        "id": "hashing-proxy-mesh-recap",
+        "title": "Quick Recap",
+        "content": `**Consistent Hashing** — \`hash(key) % N\` breaks on membership change (mass remap). Consistent hashing: nodes + keys on a ring, key -> next clockwise node; add/remove moves only ~K/N keys. **Virtual nodes** even out the distribution. Used in Redis Cluster, Cassandra/Dynamo, CDNs. Purpose = stable key->node mapping, not load balancing.
+
+**Reverse Proxy** — client-facing intermediary in front of backends: TLS termination, load balancing + health checks, routing, caching, compression, security (backends hidden). Nginx / HAProxy / Envoy.
+
+**Service Mesh** — moves service-to-service concerns (mTLS, retry, timeout, circuit breaking, tracing, traffic splitting) into a sidecar proxy layer. Data plane (sidecars) + control plane (policy). Worth it for large multi-service K8s systems; over-engineering for a 3-tier app.
+
+## Mental model
+
+\`\`\`flow
+Consistent hashing -> "which NODE owns this KEY?"
+Reverse proxy       -> "which BACKEND handles this CLIENT request?" (north-south)
+Service mesh        -> "how do SERVICES talk to each other?" (east-west)
+\`\`\`
+
+## Full edge-to-data path
+
+\`\`\`flow
+Internet -> CDN -> Load Balancer -> Reverse Proxy -> API Gateway
+-> Microservices (each with a mesh sidecar)
+-> Database / Redis (keys placed via consistent hashing) / Queue
+\`\`\`
+
+One line each:
+
+- **Consistent hashing** -> membership badalne par minimum key movement.
+- **Reverse proxy** -> backends ke aage ek smart, protective front door.
+- **Service mesh** -> networking concerns app code se nikaal kar sidecar mein.
+`
+      }
+    ]
+  },
+  {
+    "id": "distributed-building-blocks",
+    "title": "Distributed Systems Building Blocks",
+    "topics": [
+      {
+        "id": "leader-election-consensus",
+        "title": "Leader Election & Consensus",
+        "content": `> Kai nodes ko ek baat par agree karना hai (kaun leader hai, next value kya hai) — bina ek galat answer diye, node crash / network partition ke bawajood. Yeh **consensus** problem hai.
+
+## Leader election
+
+Ek cluster mein aksar ek **leader** hota hai jo writes accept karta hai (replicas follow karte hain). Leader crash -> baaki nodes naya leader chunte hain.
+
+\`\`\`flow
+Leader (accepts writes) -> Followers replicate
+Leader dies -> election -> new leader -> continue
+\`\`\`
+
+Problem: **split brain** — do nodes dono khud ko leader samajh lein (partition ke dono taraf). Iska ilaj: **quorum** — leader banne ke liye majority (N/2 + 1) votes chahiye. Ek partition ke paas majority nahi -> wo leader nahi bana sakta.
+
+## Consensus algorithms (conceptual)
+
+- **Paxos** — pehla practical consensus; sahi, but samajhna/implement karna mushkil
+- **Raft** — Paxos jaisa hi guarantee, jaan-boojh kar **understandable** banaya. 3 parts: leader election (randomized timeouts), log replication (leader entries followers ko bhejta hai, majority ack -> committed), safety. Etcd, Consul, CockroachDB, TiDB Raft use karte hain.
+- **ZAB** — ZooKeeper ka protocol
+
+Tum implement nahi karoge — but **kaha use hota hai** jaanna zaroori: distributed locks/coordination (ZooKeeper/etcd), config stores, Kafka controller, DB replication.
+
+## Where it shows up in design
+
+- "Ensure only one instance runs this job" -> a lock service backed by Raft (etcd)
+- Multi-primary DB -> consensus per write (slow) vs single-primary + failover
+- Kafka partition leader, K8s control plane
+
+> Rule: consensus reliable hai but **slow** (har decision = round trips to a majority). Isko sirf **metadata / coordination** ke liye use karo, high-volume data path ke liye nahi.
+`
+      },
+      {
+        "id": "quorum-and-clocks",
+        "title": "Quorums, Vector Clocks & Logical Time",
+        "content": `> Leaderless / multi-writer systems (Dynamo, Cassandra) mein "consistency" quorums aur causal ordering se aati hai, single leader se nahi.
+
+## Quorum: R + W > N
+
+- **N** = har key ki replicas
+- **W** = write ko kitni replicas confirm karein
+- **R** = read ke liye kitni replicas se poochho
+
+Agar **R + W > N**, to read set aur write set mein kam se kam ek common node hoga -> read ko latest write dikh jaayega (strong-ish consistency).
+
+\`\`\`flow
+N=3, W=2, R=2  ->  2+2 > 3  -> a read always overlaps the last write
+N=3, W=1, R=1  ->  fast, but read latest write miss kar sakta hai (eventual)
+\`\`\`
+
+Tune karo: W=N (slow writes, fast/consistent reads), R=1 W=1 (fast, eventual).
+
+## Conflicts: concurrent writes
+
+Do clients ne alag replicas par ek key ek saath likhi -> kaunsa "latest"? Wall-clock time reliable nahi (clock skew).
+
+- **Last-Write-Wins (LWW)** — timestamp se decide; simple, but ek write silently kho sakta hai
+- **Vector clocks** — har node ek counter; \`[A:2, B:1]\`. Do versions compare karke pata chalta hai: ek doosre se "after" hai (keep newer), ya **concurrent** (conflict -> app/client resolve kare, ya CRDT merge)
+- **Lamport timestamp** — ek single counter jo events ko **total order** deta hai (causally-related events sahi order mein); but concurrency detect nahi karta
+
+## Where it shows up
+
+- Dynamo/Cassandra tunable consistency (\`QUORUM\`, \`ONE\`, \`ALL\`)
+- Shopping cart merge (Dynamo's classic example — vector clocks)
+- "Read your writes" -> R+W>N ya route to primary
+- Distributed debugging -> Lamport/vector clocks se event order
+
+> Physical clocks pe kabhi correctness mat rakho. Ordering chahiye -> logical clocks. Overlap chahiye -> quorums.
+`
+      },
+      {
+        "id": "gossip-merkle",
+        "title": "Gossip Protocol & Merkle Trees",
+        "content": "> Bade clusters mein har node ko har node se directly baat karna (N^2) scale nahi karta. Gossip aur Merkle trees efficient tareeke se state spread + reconcile karte hain.\n\n## Gossip protocol\n\nHar node periodically kuch **random** nodes ko apni info (jo nodes alive/dead hain, membership, config) bhejta hai. Wo aage forward karte hain. Kuch rounds mein poore cluster ko pata chal jaata hai — epidemic ki tarah (isliye \"epidemic protocol\").\n\n```flow\nNode A knows X -> tells 3 random nodes -> they tell 3 each -> whole cluster in ~log(N) rounds\n```\n\n- **Fault tolerant** — koi central coordinator nahi; kuch nodes gire to bhi info phailti hai\n- **Eventually consistent** membership view\n- Use: Cassandra/Dynamo membership + failure detection, Consul, Redis Cluster, Serf\n- Cost: thoda bandwidth overhead, aur info propagation instant nahi (seconds)\n\n## Merkle trees (anti-entropy)\n\nDo replicas ke paas same data hona chahiye — but poora dataset compare karna (TB) mehenga. Merkle tree = hash tree: leaves = data blocks ke hash, parent = children ke hash ka hash, ek **root hash**.\n\n```flow\nRoot hash same?  -> replicas identical, done (1 comparison)\nRoot differs -> compare children -> descend only the differing branch -> find exact divergent blocks\n```\n\nO(log n) mein pata chal jaata hai **kaunsa** data diverge hua, sirf wahi sync karo.\n\n- Use: Cassandra/Dynamo replica repair (\"anti-entropy\"), Git (commits/trees), blockchains, BitTorrent, backup dedup, IPFS\n\n## Together (Dynamo-style)\n\nGossip -> \"kaunse nodes hain aur alive hain\". Consistent hashing -> \"key kaunse nodes par\". Quorum -> per-request consistency. Merkle trees -> background mein replicas ko sync rakhna. Vector clocks -> conflicts.\n"
+      },
+      {
+        "id": "distributed-building-blocks-recap",
+        "title": "Quick Recap",
+        "content": `**Leader election & consensus** — nodes agree on one truth despite crashes/partitions. Leader takes writes; quorum (majority) prevents split-brain. Raft = understandable consensus (etcd, Consul, CockroachDB). Consensus is correct but slow -> metadata/coordination only, not the data path.
+
+**Quorums** — \`R + W > N\` guarantees a read overlaps the last write. Tune R/W for consistency vs latency (Dynamo/Cassandra).
+
+**Logical clocks** — wall clocks lie. Lamport timestamp = total order of causal events. Vector clocks = detect "happened-before" vs "concurrent" (conflict). Used for cart merges, read-your-writes, debugging.
+
+**Gossip** — nodes tell random peers; info spreads epidemically in ~log(N) rounds. Membership + failure detection (Cassandra, Consul, Redis Cluster). No coordinator, eventually consistent.
+
+**Merkle trees** — hash tree; compare root hashes to find *which* blocks diverged in O(log n). Replica repair (anti-entropy), Git, blockchains, dedup.
+
+One line each:
+
+- **Consensus (Raft)** -> nodes safely agree on one value/leader; use for coordination, not bulk data.
+- **Quorum** -> R+W>N -> reads see the latest write.
+- **Vector clock** -> concurrent vs causal — detect write conflicts.
+- **Gossip** -> spread cluster state to random peers, epidemically.
+- **Merkle tree** -> pinpoint replica differences cheaply via hashes.
+`
+      }
+    ]
+  },
+  {
+    "id": "probabilistic-data-structures",
+    "title": "Probabilistic Data Structures",
+    "topics": [
+      {
+        "id": "bloom-filter",
+        "title": "Bloom Filter",
+        "content": `> "Kya ye element set mein hai?" — exact answer ke liye a hash set chahiye (bahut memory at scale). Bloom filter thodi si memory mein answer deta hai, ek catch ke saath: **false positives possible, false negatives never.**
+
+## Kaam kaise karta hai
+
+Ek bit array (all 0) + k hash functions. **Add(x):** x ko k hashes se run karo, har result ki bit ko 1 karo. **Check(x):** wahi k bits dekho — koi bhi 0 -> **definitely not present**; sabhi 1 -> **probably present** (ho sakta hai doosre elements ne wo bits set kiye hon).
+
+\`\`\`flow
+add("apple") -> bits 3, 17, 42 = 1
+check("apple") -> 3,17,42 all 1 -> maybe present (yes)
+check("mango") -> bit 9 = 0 -> definitely NOT present
+\`\`\`
+
+- Delete nahi hota (bit clear karo to doosre element toot jaayega). Variant: **Counting Bloom Filter** (counters, not bits) delete allow karta hai.
+- More elements -> more bits set -> false-positive rate badhta hai. Rate ko target karke size + k choose kiya jaata hai.
+
+## Kahan use hota hai (interview gold)
+
+- **DB / LSM engines** (Cassandra, HBase, RocksDB, BigTable) — "ye key is SSTable mein hai kya?" — nahi to disk read skip. Huge speedup.
+- **CDN / cache** — "ye URL cache mein hai?" pehle bloom check, warna origin
+- **Web crawler** — "ye URL already crawl kiya?"
+- **"Have I seen this?"** — dedup, one-time notifications
+- Chrome ne malicious URL check ke liye use kiya
+
+> Trade-off: chhoti memory + false positives. False positive ka matlab bas "ek extra check/miss", correctness nahi tootti.
+`
+      },
+      {
+        "id": "hyperloglog-count-min",
+        "title": "HyperLogLog & Count-Min Sketch",
+        "content": `> Jab exact count rakhna bahut mehenga ho (billions of items), approximate structures constant memory mein "kaafi accurate" answer dete hain.
+
+## HyperLogLog — approximate **distinct count** (cardinality)
+
+"Kitne **unique** visitors / IPs / search terms?" — exact ke liye har unique ko store karna padega (GBs). HLL ~12 KB mein billions of uniques ~2% error ke saath count karta hai.
+
+Idea (roughly): har item hash karo; hash ke leading zeros dekho. Zyada leading zeros = zyada rare = probably zyada unique items dekhe. Registers ka average -> cardinality estimate.
+
+\`\`\`flow
+PFADD visitors:2026-09-02 user_1 user_2 ...
+PFCOUNT visitors:2026-09-02  -> ~4,812,900  (12 KB used)
+PFMERGE  -> union of multiple HLLs (weekly = merge 7 daily)
+\`\`\`
+
+Use: unique visitors/DAU, distinct search queries, unique devices — Redis \`PF*\`, Presto/BigQuery \`APPROX_COUNT_DISTINCT\`.
+
+## Count-Min Sketch — approximate **frequency** / heavy hitters
+
+"Ye item kitni baar aaya?" ya "top-K most frequent?" — full counter map billions of keys ke liye huge. CMS = a small 2D array of counters + d hash functions. **Increment:** har row mein \`hash(x)\` position \`+1\`. **Query:** un d counters ka **minimum** (collisions sirf badha sakte hain, ghata nahi -> min best estimate).
+
+\`\`\`flow
+add("/product/1") x1000 ; add("/product/2") x5
+count("/product/1") -> ~1000 (maybe slightly over)
+\`\`\`
+
+- Over-estimates possible, under-estimates never. Heavy hitters (frequent items) accurate; rare items noisy.
+- Use: trending topics, rate limiting at scale, top-K products/queries, network traffic (heavy flows), detecting hot keys.
+
+## Why interviewers love these
+
+"Design trending hashtags for Twitter" / "count unique users on a huge stream" — the expected answer is **not** a giant hash map. It's HLL + Count-Min Sketch + maybe a top-K heap. Shows you think about memory at scale.
+`
+      },
+      {
+        "id": "probabilistic-recap",
+        "title": "Quick Recap",
+        "content": `**Bloom filter** — "is x in the set?" in tiny memory. False positive possible, false negative never. Bit array + k hashes. Used in LSM/DB engines (skip disk reads), CDN/cache, crawlers, dedup. Counting Bloom allows delete.
+
+**HyperLogLog** — approximate **distinct count** (cardinality) of a huge stream in ~12 KB, ~2% error. Redis \`PFADD/PFCOUNT/PFMERGE\`. Unique visitors, distinct queries.
+
+**Count-Min Sketch** — approximate **frequency** / heavy-hitters in small fixed memory. Over-estimates only (take the min of d counters). Trending topics, top-K, hot-key detection, rate limiting at scale.
+
+> Common thread: trade a little accuracy for massive memory savings, with a **one-sided** error you can reason about.
+
+One line each:
+
+- **Bloom filter** -> "probably present / definitely absent" — skip expensive lookups.
+- **HyperLogLog** -> count unique things in a stream with almost no memory.
+- **Count-Min Sketch** -> count how often things appear / find the heavy hitters, cheaply.
+`
+      }
+    ]
+  },
+  {
+    "id": "storage-engines-analytics",
+    "title": "Storage Engines & Analytics Data Systems",
+    "topics": [
+      {
+        "id": "lsm-vs-btree",
+        "title": "Storage Engines: LSM Tree vs B-Tree",
+        "content": `> "Cassandra writes fast kyun? Postgres reads achhe kyun?" — jawab storage engine hai. Ye classic senior question hai.
+
+## B-Tree (Postgres, MySQL/InnoDB, most RDBMS)
+
+Data ek balanced tree mein, sorted, disk pages mein. Read = O(log n) tree traverse -> ek jagah se row. Write = wahi page dhoondo, **in place** update (+ WAL). Page fill/split ho sakta hai.
+
+- **Reads:** predictable, fast (point + range), ek page read
+- **Writes:** random disk writes (page yahan-wahan), write amplification (WAL + page), locking
+- Mature, strong transactions
+
+## LSM Tree (Cassandra, RocksDB, LevelDB, HBase, ScyllaDB, BigTable)
+
+Writes pehle ek in-memory sorted structure (**memtable**) + a WAL. Memtable bhar gaya -> disk par ek immutable **SSTable** file flush (sequential write — fast). Background **compaction** SSTables ko merge/sort karta hai aur deleted (tombstoned) data hata deta hai.
+
+- **Writes:** append-only, sequential -> **very fast**, high throughput
+- **Reads:** ek key kai SSTables mein ho sakti hai -> memtable + several SSTables check (yahin **Bloom filters** + per-SSTable index bachaate hain). Range reads thode mehenge.
+- **Compaction:** background CPU/IO cost, aur temporary space amplification
+- Great for write-heavy, time-series, logs, big data
+
+\`\`\`flow
+LSM write:  WAL append + memtable insert  (fast)
+            memtable full -> flush SSTable (sequential)
+            background: compaction merges SSTables
+LSM read:   memtable -> bloom-check each SSTable -> read matching -> merge newest wins
+\`\`\`
+
+| | B-Tree | LSM Tree |
+| --- | --- | --- |
+| Write pattern | random, in-place | sequential, append |
+| Write speed | good | excellent |
+| Read speed | excellent | good (bloom + index help) |
+| Space | fragmentation | tombstones + compaction spikes |
+| Best for | OLTP, read-heavy, txns | write-heavy, time-series, big scale |
+
+> Interview move: "write-heavy ingestion -> LSM-backed store (Cassandra); complex transactional queries -> B-tree RDBMS (Postgres)."
+`
+      },
+      {
+        "id": "wal-cdc",
+        "title": "Write-Ahead Log & Change Data Capture",
+        "content": `> Ek append-only log jo har change ko **actual data change se pehle** record karta hai. Kai systems ki reedh ki haddi.
+
+## Write-Ahead Log (WAL / redo log / commit log)
+
+DB pehle change ko WAL mein append karta hai (sequential, fast, durable via fsync), **phir** data pages update karta hai. Crash ke baad: WAL replay karke committed-but-not-yet-applied changes recover.
+
+- **Durability (ACID D)** — committed = WAL mein hai
+- **Crash recovery** — WAL se replay
+- **Replication** — WAL/binlog followers ko stream (Postgres streaming replication, MySQL binlog)
+- **PITR** — base backup + archived WAL = kisi bhi second par restore
+
+## Change Data Capture (CDC)
+
+Us hi WAL/binlog/oplog ko **read** karke DB ke har insert/update/delete ko ek event stream banao — **application code ko touch kiye bina**.
+
+\`\`\`flow
+Postgres WAL / MySQL binlog / Mongo oplog
+-> Debezium (or built-in connector)
+-> Kafka topic (one message per row change)
+-> consumers: search index, cache invalidation, data warehouse, other services
+\`\`\`
+
+- **Reliable** — dual-write problem nahi (Ch: Event-Driven); DB commit hi source hai
+- **Decoupled** — DB ko pata bhi nahi kaun consume kar raha
+- Use: DB -> Elasticsearch sync, cache invalidation, microservices ko "data changed" batana, real-time ETL, audit log
+
+> "DB ki har change ko reliably kai jagah propagate karo" -> CDC. "DB crash ke baad consistent kaise?" -> WAL replay.
+`
+      },
+      {
+        "id": "oltp-vs-olap",
+        "title": "OLTP vs OLAP, Columnar Storage & Warehouses",
+        "content": `> Ek hi DB transactions **aur** heavy analytics dono achhe se nahi karta. Do alag worlds.
+
+## OLTP — Online Transaction Processing
+
+Tumhari app ka main DB. Bahut si chhoti reads/writes, ek-ek row (\`get user 123\`, \`insert order\`). Row-oriented storage (ek row ke saare columns saath). Postgres, MySQL, Mongo, DynamoDB.
+
+## OLAP — Online Analytical Processing
+
+Analytics/reporting/BI. Kam queries, but har query **millions of rows** scan karke aggregate karti hai (\`last quarter har region ka revenue\`). **Columnar** storage: ek column ke saare values saath -> query sirf zaroori columns padhe, aur same-type data compress bahut achha hota hai. Snowflake, BigQuery, Redshift, ClickHouse, DuckDB.
+
+\`\`\`flow
+Row store:   [id,name,region,amount][id,name,region,amount]...  -> full scan for SUM(amount)
+Column store: [amount,amount,amount...]  -> read only that column, compressed
+\`\`\`
+
+| | OLTP | OLAP |
+| --- | --- | --- |
+| Query | point / small range | scan + aggregate huge |
+| Rows touched | few | millions+ |
+| Storage | row-oriented | column-oriented |
+| Writes | constant, small | bulk load / append |
+| Example | Postgres | BigQuery, ClickHouse |
+
+## Getting OLTP data into OLAP
+
+- **ETL** — Extract -> Transform -> Load (transform before loading; older)
+- **ELT** — Extract -> Load raw -> Transform in the warehouse (modern; warehouse is cheap+powerful)
+- **Data lake** — raw files (Parquet) in object storage; **lakehouse** = lake + warehouse features (Delta, Iceberg)
+- Pipeline: OLTP -> **CDC / batch export** -> lake/warehouse -> BI dashboards
+- **Time-series DBs** (InfluxDB, TimescaleDB, Prometheus) — metrics/events; specialized compression + downsampling
+
+> Interview: "reporting/analytics query is slowing the app DB" -> don't index harder; **offload to a warehouse** via CDC/ETL. App DB stays OLTP.
+`
+      },
+      {
+        "id": "storage-analytics-recap",
+        "title": "Quick Recap",
+        "content": `**LSM vs B-Tree** — B-tree: in-place, random writes, excellent reads (OLTP, Postgres/MySQL). LSM: append-only memtable -> immutable SSTables + compaction, excellent writes, reads helped by Bloom filters (Cassandra, RocksDB, time-series). Write-heavy -> LSM; transactional/read-heavy -> B-tree.
+
+**WAL** — append change to a durable log BEFORE touching data pages. Powers durability, crash recovery, replication (binlog/streaming), and PITR.
+
+**CDC** — read that WAL/binlog/oplog to emit every row change as an event stream (Debezium -> Kafka), without app changes. Sync to search/cache/warehouse/other services; avoids dual-write.
+
+**OLTP vs OLAP** — OLTP = many tiny row ops (app DB, row store). OLAP = few queries scanning millions of rows (columnar store, warehouse). Move data OLTP -> OLAP via ETL/ELT/CDC; don't run analytics on the app DB.
+
+One line each:
+
+- **B-tree** -> read-optimized, in-place; **LSM** -> write-optimized, append + compact.
+- **WAL** -> log-first for durability, recovery, replication.
+- **CDC** -> turn DB changes into an event stream, reliably.
+- **OLAP / columnar warehouse** -> offload big analytical scans off the app DB.
+`
+      }
+    ]
+  },
+  {
+    "id": "realtime-and-feeds",
+    "title": "Real-Time Transports, Streaming & Newsfeeds",
+    "topics": [
+      {
+        "id": "realtime-transports-at-scale",
+        "title": "Real-Time Transports at Scale",
+        "content": `> "Server se client ko push" ke options, aur unhe millions of connections tak scale karna.
+
+## Options
+
+| Transport | How | Use |
+| --- | --- | --- |
+| **Short polling** | client har X sec GET | simple, wasteful, laggy |
+| **Long polling** | server request ko hold karta hai jab tak data na ho | okay fallback, connection churn |
+| **SSE** | ek long-lived HTTP stream, server -> client only | notifications, feeds, **LLM token streaming**, live scores |
+| **WebSocket** | full-duplex TCP upgrade | chat, multiplayer, collaborative editing, trading |
+| **WebRTC** | peer-to-peer | video/voice calls, screen share |
+
+Default: SSE agar sirf server->client chahiye (simpler, HTTP/2 friendly, auto-reconnect). WebSocket jab client bhi frequently bhejta hai.
+
+## Scaling stateful connections
+
+Problem: 1M WebSocket connections = persistent memory + file descriptors. Ek server ~50-100k handle karta hai -> kai gateway servers chahiye.
+
+\`\`\`flow
+Clients -> LB (sticky / connection-aware) -> WS Gateway 1..N
+User on Gateway 3; message created on Gateway 9
+-> publish to Redis / Kafka -> all gateways -> gateway 3 delivers to that socket
+\`\`\`
+
+- **Connection registry** — "user U kaunse gateway par hai" (Redis)
+- **Pub/sub backplane** — gateways ke beech message route (Redis Pub/Sub, Kafka, NATS)
+- **Backpressure** — slow client -> buffer cap -> drop / disconnect
+- **Reconnect + catch-up** — client "last message id" bhejta hai -> missed messages replay (warna reconnect = data loss dikhta hai)
+- **Auth** — handshake par token verify, periodically re-check, expiry par disconnect
+- **Presence** — heartbeat/TTL keys; "online" = key exists
+
+Managed options: Ably, Pusher, AWS API Gateway WebSockets, Supabase Realtime — connection scaling offload.
+`
+      },
+      {
+        "id": "stream-processing",
+        "title": "Stream Processing & Windowing",
+        "content": `> Continuous data (clicks, events, IoT, logs) ko **arrival ke saath** process karna — batch (ghante baad) ke bajaye.
+
+## Batch vs Stream
+
+- **Batch** — bounded data, periodically (nightly ETL). High latency, simple, easy reprocess.
+- **Stream** — unbounded data, continuously (real-time dashboards, fraud detection, alerting). Low latency, harder.
+- **Lambda architecture** — batch layer (accurate, slow) + speed layer (fast, approximate) + serving layer merges. **Kappa** — sirf stream, reprocess by replaying the log.
+
+## Tools
+
+Kafka Streams, Apache Flink, Spark Structured Streaming, Kinesis Data Analytics, Materialize.
+
+## Windowing (the core concept)
+
+Unbounded stream par aggregate karne ke liye time ko chunks mein baanto:
+
+- **Tumbling** — fixed, non-overlapping (har 1 min ka count)
+- **Sliding** — fixed size, overlapping (last 5 min, updated every 1 min)
+- **Session** — activity ke gaps se define (user session = events until 30 min idle)
+
+## Time & correctness
+
+- **Event time vs processing time** — event 10:00:00 par hua but 10:00:45 par pahuncha (mobile offline tha). Correct analytics event time use karti hai.
+- **Watermarks** — "ab 10:05 se pehle ke saare events aa gaye maan lo" -> window close karo. Late events -> drop ya side-output.
+- **Exactly-once in streams** — checkpointing + idempotent sinks (Flink, Kafka transactions)
+
+## Where it shows up
+
+Real-time analytics, "trending now", fraud/anomaly detection, live leaderboards, monitoring/alerting, ETL into warehouse, enriching events.
+
+> Interview: "design a real-time analytics / ad-click aggregator" -> ingest to Kafka -> stream processor with tumbling windows on event time -> write rollups to a fast store -> dashboard. Raw events also land in the warehouse.
+`
+      },
+      {
+        "id": "newsfeed-fanout",
+        "title": "Newsfeed / Timeline: Fan-out Patterns",
+        "content": `> "Design Twitter/Instagram feed" — the most common system design interview. Core question: **feed kab banaye — write par ya read par?**
+
+## Fan-out on write (push)
+
+User post karta hai -> uske saare followers ki precomputed feed lists mein wo post-id **turant** push kar do.
+
+\`\`\`flow
+Alice posts -> for each follower -> LPUSH feed:follower_id post_id
+Follower opens app -> read own feed list (fast, O(1))
+\`\`\`
+
+- **Read: super fast** (feed ready hai)
+- **Write: expensive** — Alice ke 10M followers -> 10M list writes per tweet
+- **Celebrity problem** — a user with 50M followers ek tweet = 50M writes, huge spike
+
+## Fan-out on read (pull)
+
+Feed store nahi karte. User feed maangta hai -> uske followees ki recent posts **abhi** fetch + merge + sort karo.
+
+\`\`\`flow
+Bob opens app -> get Bob's followees -> fetch recent posts of each -> merge, rank -> return
+\`\`\`
+
+- **Write: cheap** (just store the post once)
+- **Read: expensive** — har feed load par N followees ke queries + merge
+
+## Hybrid (what real systems do)
+
+- **Normal users:** fan-out on write (push to followers' feeds)
+- **Celebrities:** fan-out on read (unke posts push mat karo; feed load par unhe live merge karo)
+- Cache the assembled feed; paginate; precompute for active users only (inactive users ke liye feed banana waste)
+
+## Other pieces
+
+- **Ranking** — chronological vs ML-ranked (engagement signals)
+- **Feed store** — Redis lists / a wide-column store; store post-ids not full posts (hydrate on read)
+- **Fanout workers** — async via queue; posting returns immediately
+- **Dedup, "already seen", pagination cursors, real-time updates (WebSocket/SSE for "N new tweets")**
+
+> Say the magic words: "hybrid fan-out — push for regular users, pull for celebrities, cache assembled feeds, fan-out via a queue."
+`
+      },
+      {
+        "id": "realtime-feeds-recap",
+        "title": "Quick Recap",
+        "content": `**Real-time transports** — polling (simple, wasteful) < long-polling < **SSE** (server->client stream: notifications, feeds, LLM tokens) < **WebSocket** (full-duplex: chat, collab, games) < WebRTC (p2p media). Scale stateful connections with many WS gateways + a connection registry + a pub/sub backplane (Redis/Kafka) + reconnect-with-catch-up.
+
+**Stream processing** — process unbounded event streams as they arrive (Flink, Kafka Streams). **Windows**: tumbling / sliding / session. Use **event time** + **watermarks** for correctness with late data. Lambda (batch+speed) vs Kappa (stream + replay).
+
+**Newsfeed fan-out** — fan-out on **write** (push to followers' feeds; fast reads, expensive writes, celebrity problem) vs fan-out on **read** (merge followees' posts at read time; cheap writes, expensive reads). Real answer = **hybrid**: push for normal users, pull for celebrities, cache assembled feeds, fan-out via queue.
+
+One line each:
+
+- **SSE vs WebSocket** -> one-way stream vs two-way; pick the simpler that fits.
+- **Windowing** -> chop an infinite stream into time buckets to aggregate.
+- **Event time + watermark** -> correct aggregates despite late/out-of-order events.
+- **Hybrid fan-out** -> push for the many, pull for the famous.
+`
+      }
+    ]
+  },
+  {
+    "id": "geospatial-collaboration",
+    "title": "Geospatial Indexing & Collaborative Systems",
+    "topics": [
+      {
+        "id": "geospatial-indexing",
+        "title": "Geospatial Indexing — Find Nearby",
+        "content": `> "Design Uber / Yelp / 'restaurants near me'" — core problem: lat/long par efficient **proximity search**. \`WHERE distance(...) < 5km\` = full scan (can't index a formula).
+
+## The idea: turn 2D space into 1D keys
+
+- **Geohash** — recursively grid ko 4 (ya 32) mein baanto; har cell ko ek short string (\`tdr1y\`). Longer string = smaller/precise cell. **Nearby points share a prefix** -> ek prefix range query = ek area. Redis \`GEOADD/GEOSEARCH\` uses this.
+- **Quadtree** — tree jahan har node 4 quadrants mein split hota hai jab usme bahut points ho jaayein. Dense areas (downtown) deep, sparse areas shallow. In-memory, dynamic.
+- **S2 (Google)** — sphere ko cells mein map karta hai (Earth curvature handle), hierarchical cell ids. Google Maps, CockroachDB.
+- **H3 (Uber)** — **hexagonal** grid (neighbors equidistant — hex ke saare 6 padosi same distance, square ke nahi). Uber's actual choice.
+
+\`\`\`flow
+Driver location update -> compute cell id (geohash/H3) -> store in that cell's set (Redis)
+Rider requests -> compute rider's cell + 8 neighbor cells -> fetch drivers in those -> filter exact distance -> sort
+\`\`\`
+
+## Design "find nearby drivers"
+
+- Drivers push location every few sec -> update their cell membership (Redis GEO / a cell->drivers map)
+- Query: rider's cell + neighboring cells (edge par hone ki wajah se), fetch candidates, exact-distance filter, rank
+- High write volume (every driver, every few sec) -> in-memory store, TTL on stale locations, maybe shard by region
+- Matching, ETA (routing service), surge (demand/supply per cell) built on top
+
+> Keywords: geohash / quadtree / S2 / H3, "convert 2D to 1D so it's indexable", "query the cell + its neighbors".
+`
+      },
+      {
+        "id": "collaborative-editing",
+        "title": "Collaborative Editing — OT vs CRDT",
+        "content": `> "Design Google Docs / Figma / a collaborative whiteboard" — multiple users edit the **same document simultaneously**, offline edits sync later, everyone converges to the same state.
+
+## The problem
+
+\`\`\`flow
+Doc: "cat"
+User A inserts "s" at pos 3 -> "cats"
+User B (same moment) deletes pos 0 -> "at"
+Naively applied in different orders on each client -> different final docs (diverged!)
+\`\`\`
+
+## Operational Transformation (OT)
+
+Operations (insert/delete at position) ko servers/clients ke beech bhejte hain, aur har op ko concurrent ops ke against **transform** karte hain (positions adjust) taaki har jagah same final state aaye.
+
+- Google Docs uses OT
+- Correct but **complex** — transformation functions likhna aur test karna hard, usually a central server needed to order ops
+
+## CRDT — Conflict-free Replicated Data Type
+
+Data structures jo aise design kiye gaye hain ki concurrent updates **kisi bhi order** mein merge karke same result dein — **no central coordinator, no transform**.
+
+- Text CRDTs (RGA, Yjs, Automerge) — har character ko ek unique, immutable id; insert = "id X ke baad add"; delete = tombstone. Merge = union.
+- **Automatically converges**, great for offline-first + P2P
+- Cost: metadata overhead (har char ka id), tombstones grow (need compaction)
+- Figma, Linear, Yjs-based editors, Apple Notes use CRDTs
+
+## Other pieces
+
+- **Presence / cursors** — WebSocket, ephemeral (Ch: real-time transports)
+- **Persistence** — periodic snapshots + op log; load = snapshot + replay
+- **Awareness** — who's viewing, selections
+
+| | OT | CRDT |
+| --- | --- | --- |
+| Coordinator | usually central server | not required |
+| Complexity | transform logic hard | data-structure design hard, simple merge |
+| Offline / P2P | weaker | strong |
+| Overhead | low | per-element metadata + tombstones |
+`
+      },
+      {
+        "id": "geospatial-collaboration-recap",
+        "title": "Quick Recap",
+        "content": `**Geospatial indexing** — can't index \`distance(...)\`. Convert 2D coordinates to 1D keys so nearby points cluster: **geohash** (prefix = area), **quadtree** (adaptive to density), **S2** (sphere-aware, Google), **H3** (hexagons, Uber). "Find nearby" = compute the query cell + its neighbors, fetch candidates, exact-distance filter, rank. High-frequency location writes -> in-memory + TTL + regional sharding.
+
+**Collaborative editing** — many users edit one doc concurrently, must converge. **OT** (Google Docs): send ops, transform against concurrent ops; correct but complex, needs a central orderer. **CRDT** (Figma, Yjs): data types that merge in any order with no coordinator; great offline/P2P; cost is per-element metadata + tombstones. Presence/cursors over WebSocket; persist via snapshot + op log.
+
+One line each:
+
+- **Geohash / S2 / H3** -> map the globe to indexable cell ids; query cell + neighbors.
+- **OT** -> transform concurrent edit operations to keep everyone in sync.
+- **CRDT** -> data structures that merge conflict-free, no central server.
+`
+      }
+    ]
+  },
+  {
+    "id": "the-interview",
+    "title": "The System Design Interview (FAANG bar)",
+    "topics": [
+      {
+        "id": "interview-framework",
+        "title": "The 6-Step Framework",
+        "content": `> A 45-60 min interview. Interviewers score you on **structure**, not on knowing every buzzword. Drive the conversation; don't wait to be asked.
+
+## Step 1 — Requirements (5-8 min)
+
+- **Functional** — 3-5 core features only. Push back on scope: "for v1, let's focus on X, Y, Z. Skip payments/search for now?" Get agreement.
+- **Non-functional** — which matters most here? latency, availability, consistency, durability, scale, cost. (Payment: consistency. Feed: availability. Chat: latency.)
+- **Scale** — DAU, read/write ratio, data size, growth. Ask; if they defer, state your assumption.
+
+## Step 2 — Estimation (3-5 min)
+
+DAU -> QPS (peak = 2-5x avg), storage/day and /year, bandwidth, cache size, number of servers. Round aggressively. This sizes the design (do we need sharding? a CDN? a queue?).
+
+## Step 3 — API + Data Model (5-8 min)
+
+- Key endpoints: method, path, params, response. REST/gRPC.
+- Core entities, relationships, and **the access patterns** — then pick SQL/NoSQL and the indexes/keys from those patterns.
+
+## Step 4 — High-Level Design (10-12 min)
+
+Draw the boxes: clients -> LB / gateway -> services -> caches -> DB(s) -> queue -> workers. Data flow for the **main write** and the **main read**. Keep it simple first; you'll add depth next.
+
+## Step 5 — Deep Dive (10-15 min)
+
+Interviewer picks (or you offer) 1-2 areas: the hard part from Step 1. Go deep: sharding key, cache strategy + invalidation, fan-out approach, consistency mechanism, hot-key/celebrity handling, the specific data structure.
+
+## Step 6 — Bottlenecks & Wrap (5 min)
+
+Single points of failure, scaling the next 10x, what breaks first, monitoring/alerts, cost. "Given more time I'd also cover ___." Trade-offs, out loud.
+
+## Meta
+
+Think out loud. State assumptions. Give alternatives + why you chose one. It's a conversation — engage with hints (they're steering you to the interesting part).
+`
+      },
+      {
+        "id": "numbers-to-know",
+        "title": "Numbers & Estimation Every Engineer Should Know",
+        "content": `> Interviewers expect you to sanity-check designs with rough math. Memorize the orders of magnitude, not exact values.
+
+## Latency numbers (orders of magnitude)
+
+| Operation | ~Time |
+| --- | --- |
+| L1 cache reference | ~1 ns |
+| Branch mispredict | ~3 ns |
+| L2 cache reference | ~4 ns |
+| Mutex lock/unlock | ~17 ns |
+| Main memory (RAM) reference | ~100 ns |
+| Compress 1 KB (Zstd) | ~500 ns |
+| Read 1 MB sequentially from RAM | ~3 µs |
+| SSD random read | ~16 µs |
+| Read 1 MB sequentially from SSD | ~50 µs |
+| Round trip within same datacenter | ~500 µs |
+| Read 1 MB sequentially from disk (HDD) | ~1-2 ms |
+| Disk seek (HDD) | ~3-10 ms |
+| Round trip CA <-> Netherlands | ~150 ms |
+
+Takeaways: **RAM ~100,000x faster than disk seek.** **Sequential >> random.** **Cross-region round trips dominate** — batch/parallelize calls, cache near the user.
+
+## Capacity math
+
+- 1 day ≈ 86,400 s ≈ **~10^5 s**. So "X per day" ÷ 10^5 ≈ avg per second.
+- Peak QPS ≈ avg × (2 to 5). Spiky (flash sale, viral) × 10+.
+- 1 million writes/day ≈ ~12 writes/sec avg. 1 billion/day ≈ ~11,600/sec.
+- Char ≈ 1 byte (ASCII), ≈ 2 (UTF-16). A tweet ≈ 300 bytes. A typical web request/response ≈ 1-100 KB.
+- 1 KB × 1M = 1 GB. 1 MB × 1M = 1 TB.
+- A modern server: ~10-50k simple QPS, ~50-100k concurrent connections, 64-256 GB RAM.
+
+## Availability -> downtime/year
+
+| Nines | Downtime/year |
+| --- | --- |
+| 99% | ~3.65 days |
+| 99.9% | ~8.8 hours |
+| 99.99% | ~53 minutes |
+| 99.999% | ~5 minutes |
+
+Each nine ≈ more redundancy, failover automation, and cost.
+
+## Quick worked example
+
+"Design a URL shortener, 100M new links/month."
+100M/month ÷ (30 × 10^5 s) ≈ **~40 writes/sec** avg, ~150 peak. Reads maybe 10:1 -> ~400-1500 reads/sec.
+Storage: 100M × ~500 bytes/row ≈ 50 GB/month, 600 GB/year -> one DB is fine for years; cache hot links in Redis; reads dominate -> replicas + CDN for redirects.
+`
+      },
+      {
+        "id": "canonical-problems",
+        "title": "Canonical Problems — Cheat Sheet",
+        "content": `> The ~20 designs interviewers pull from. For each: the hard part + the technique. (Details are in the chapters above.)
+
+| Problem | Hard part | Key techniques |
+| --- | --- | --- |
+| URL shortener | id generation, read scale | base62 of counter, cache, CDN redirects, analytics async |
+| Twitter / news feed | feed assembly at scale | hybrid fan-out (push normal / pull celebrity), feed cache, ranking |
+| Chat (WhatsApp) | delivery + ordering + scale | WS gateways + pub/sub backplane, per-conversation sequence, since-cursor, receipts |
+| Notification system | fan-out + per-channel retry + dedup | event -> queue -> per-channel workers, prefs, rate limit, DLQ, idempotency |
+| Rate limiter | distributed accuracy | token bucket in Redis (Lua), sliding window, per key |
+| Nearby / Uber | geo proximity + high write | geohash/H3 cells, query cell+neighbors, in-memory + TTL, regional shards |
+| YouTube / Netflix | upload, transcode, stream | chunked upload -> queue -> transcode farm -> multiple bitrates -> CDN, HLS/DASH adaptive |
+| Google Docs | concurrent editing | OT or CRDT, WebSocket presence, snapshot + op log |
+| Typeahead / autocomplete | prefix search + ranking | trie / edge-ngram index, top-K per prefix cached, debounce |
+| Dropbox / file sync | sync + conflicts + big files | chunking + content hash (dedup), metadata service, presigned S3, versioning |
+| Web crawler | scale + politeness + dedup | frontier queue, per-domain rate limit, Bloom filter for seen URLs, priority |
+| Distributed cache | placement + eviction + HA | consistent hashing + vnodes, LRU, replication, client-side routing |
+| Key-value store (Dynamo) | availability + partitions | consistent hashing, quorum R+W>N, vector clocks, gossip, Merkle repair, LSM |
+| Ad click aggregator / analytics | high volume + real-time counts | Kafka -> stream processor, tumbling windows on event time, HLL/Count-Min, rollups + warehouse |
+| Leaderboard | ranked reads at scale | Redis sorted set, sharded by segment, periodic merge |
+| Payment system | never double-charge, reconcilable | idempotency keys, ledger table, webhook as truth, outbox, reconciliation job |
+| Job scheduler | exactly-once trigger at scale | leader/lock for trigger, scheduler -> queue -> workers, idempotent jobs, DLQ |
+| Distributed ID generation | unique, ~ordered, no coordination | Snowflake (timestamp + machine id + sequence), or DB ticket server, or UUIDv7 |
+| Search (Google-ish) | index + rank + scale | inverted index, sharded by doc, BM25 + signals, caching, crawl pipeline |
+
+> Pattern: almost every answer = LB/gateway + stateless services + cache + the right datastore + a queue for async + sharding/consistent-hashing + idempotency + observability. Learn the **skeleton**, specialize per problem.
+`
+      },
+      {
+        "id": "senior-signals",
+        "title": "Senior Signals & Red Flags",
+        "content": `> What separates "mid" from "senior/staff" in the same 45 minutes.
+
+## Green flags (do these)
+
+- **Clarify before designing** — nail scope + the dominant non-functional requirement
+- **Numbers drive decisions** — "40 writes/sec, so one DB is fine; no sharding yet"
+- **Start simple, evolve** — a monolith + one DB, then add cache/queue/shard *when the numbers demand it*
+- **Name trade-offs explicitly** — "fan-out on write: fast reads, but the celebrity problem — so hybrid"
+- **Talk about failure** — what happens when this service/DB/queue is down or slow; retries, timeouts, circuit breakers, graceful degradation
+- **Consistency precision** — say *which* data needs strong consistency and which is fine eventual
+- **Data model + access patterns first**, then pick the store
+- **Operability** — monitoring, alerts on symptoms, rollout/rollback, cost
+- **Know the estimates** — powers of 2, latency numbers, QPS math
+- **Drive, but listen** — engage with hints; they point at the interesting deep-dive
+
+## Red flags (avoid these)
+
+- Jumping to microservices / Kafka / Kubernetes before requirements
+- "We'll use MongoDB because it scales" with no reasoning
+- No estimation; can't say if a single DB suffices
+- Ignoring failure modes and the single points of failure
+- Hand-waving "add a cache" without invalidation, or "shard it" without a shard key
+- One giant diagram, no data flow, no depth on the hard part
+- Not managing time — stuck on the API for 20 minutes
+- Silent thinking; not reacting to interviewer steering
+- Claiming "exactly-once" without qualification; assuming clocks are synchronized
+- Over-engineering: multi-region + service mesh for a 10k-user app
+
+## The one-liner
+
+> Structured thinking + numbers + explicit trade-offs + failure handling, evolving a simple design to meet stated scale — that's the bar.
+`
+      }
+    ]
+  },
+  {
+    "id": "multiregion-deploy-security",
+    "title": "Multi-Region, Deployment & Security at Scale",
+    "topics": [
+      {
+        "id": "multi-region",
+        "title": "Multi-Region & Geo-Distribution",
+        "content": `> One region = one big failure domain (and far from half your users). Going multi-region buys availability + latency, and costs a lot of complexity (data is the hard part).
+
+## Why
+
+- **Availability** — region outage doesn't take you down
+- **Latency** — serve users from a nearby region
+- **Data residency** — EU user data stays in the EU (GDPR), etc.
+
+## Patterns
+
+- **Active-Passive (failover)** — one region serves; a standby replicates and takes over on disaster. Simpler. RTO = failover time; RPO = replication lag.
+- **Active-Active** — all regions serve traffic. Best latency + availability. Hard part: **writes** — same row edited in two regions.
+
+## Routing users to a region
+
+- **GeoDNS / latency-based routing** (Route 53, Cloudflare) — resolve to the nearest healthy region
+- **Anycast** — same IP announced from many locations; network routes to nearest
+- Health checks -> pull a region out on failure
+
+## The data problem (active-active writes)
+
+- **Single-writer region per record** (partition users/tenants by home region; writes go home, reads local) — avoids conflicts, adds cross-region latency for away users
+- **Multi-primary with conflict resolution** — LWW, CRDTs, or app-level merge (Ch: quorums/vector clocks)
+- **Globally-distributed DBs** — Spanner (TrueTime), CockroachDB, DynamoDB Global Tables, Yugabyte — handle this for you, at a cost
+- Async replication between regions -> **eventual consistency across regions**; keep strongly-consistent operations within one region
+
+## Also
+
+Cross-region replication lag & cost (egress $$), config/secret propagation, and testing failover regularly (a standby you never test doesn't work).
+
+> Interview: don't reach for multi-region unless availability/latency/residency requirements force it. If they do: "active-active, users pinned to a home region for writes, eventual cross-region replication, CRDT/LWW for the rare conflict."
+`
+      },
+      {
+        "id": "deployment-strategies",
+        "title": "Deployment Strategies & Safe Rollouts",
+        "content": `> Shipping to production without an outage. This shows operational maturity.
+
+## Strategies
+
+- **Rolling** — replace instances a few at a time. No extra capacity, slowish, mixed versions briefly.
+- **Blue-Green** — full parallel environment (green) with the new version; flip the LB from blue to green instantly; roll back = flip back. Doubles infra during deploy.
+- **Canary** — send 1% -> 5% -> 25% -> 100% of traffic to the new version, watching metrics (error rate, latency, business KPIs). Auto-rollback on regression. Best risk/cost balance; the service mesh or LB does the split.
+- **Shadow / mirror** — send a copy of real traffic to the new version, discard responses; compare. Great for risky changes, no user impact.
+
+## Enablers
+
+- **Feature flags** — deploy code dark, turn features on/off at runtime (per user %, per tenant), decouple deploy from release, instant kill switch
+- **Backward-compatible changes** — new code must work with old data/messages and vice versa (esp. DB migrations: expand -> migrate -> contract, never rename-in-place)
+- **DB migrations** — additive first, backfill, switch reads, drop old column later — each step deployable independently
+- **Health checks** — readiness (ready for traffic) vs liveness (restart me); drain connections on shutdown
+- **Automated rollback** — pipeline reverts on failed health/canary metrics
+- **Observability tie-in** — every deploy tagged with a release id; error tracking groups by release
+
+> "How do you ship a risky change?" -> feature flag + canary + backward-compatible migration + automated rollback + a release-tagged dashboard.
+`
+      },
+      {
+        "id": "security-at-scale",
+        "title": "Security in System Design",
+        "content": `> Security questions inside a design: auth at scale, protecting the edge, data protection, and blast-radius limits.
+
+## AuthN / AuthZ at scale
+
+- **Sessions** (server-side, cookie) vs **JWT** (stateless, no lookup, but revocation is hard -> short access + rotating refresh, Ch: Auth)
+- **OAuth2 / OIDC** for third-party + SSO; **API keys** for service/partner; **mTLS** for service-to-service
+- Central identity service; gateway verifies tokens, passes a trusted identity inward; **authorize on every request** server-side (RBAC/ABAC, ownership, tenant scoping)
+
+## Edge protection
+
+- **TLS everywhere** (HSTS), terminate at the edge, re-encrypt internally
+- **DDoS** — CDN/anycast absorb volumetric; rate limiting + WAF for L7; SYN cookies; autoscale + load shedding; challenge (CAPTCHA) suspicious traffic
+- **WAF** — block injection, common exploits, bad bots
+- **Rate limiting / quotas** per user/IP/key (Ch: rate limiting)
+
+## Data protection
+
+- **Encryption in transit** (TLS) + **at rest** (disk/DB/S3 encryption, KMS-managed keys, rotation)
+- **Secrets** — a secrets manager (Vault, AWS Secrets Manager), never in code/env-in-repo, rotate
+- **PII** — minimize collection, encrypt sensitive fields, tokenize (payments -> never store raw card, use a vault/provider token), access logging
+- **Compliance** — GDPR/DPDP: data export + **deletion** path (including backups policy, search index, logs, caches), data residency, consent, retention limits
+- **Audit log** — who did what, immutable, for sensitive actions
+
+## Blast radius
+
+- Least privilege (IAM roles, DB users per service), network segmentation (private subnets, security groups), no service implicitly trusts another
+- Input validation + output encoding everywhere; parameterized queries; SSRF guards on "fetch a URL" features
+- Dependency scanning, image scanning, SBOM
+
+> Design answer: "TLS + WAF + rate limiting at the edge; central auth, authorize every request, tenant isolation; encrypt at rest + in transit, secrets in a manager, PII minimized with a deletion path; least-privilege IAM and network segmentation to bound blast radius."
+`
+      },
+      {
+        "id": "multiregion-deploy-security-recap",
+        "title": "Quick Recap",
+        "content": `**Multi-region** — buys availability + latency + data residency; the hard part is writes. Active-passive (simple failover) vs active-active (best, needs conflict handling). Route via GeoDNS/latency-based/anycast. Pin records to a home write-region, replicate async (eventual across regions), use CRDT/LWW or a global DB (Spanner/Cockroach) for conflicts. Don't do it unless requirements force it.
+
+**Deployment** — rolling / blue-green (instant flip, 2x infra) / **canary** (gradual % with metric-gated auto-rollback) / shadow (mirror traffic). Enablers: feature flags (deploy != release, kill switch), backward-compatible changes, expand-migrate-contract DB migrations, readiness/liveness checks, release-tagged observability.
+
+**Security in design** — AuthN (sessions vs JWT + refresh, OAuth/OIDC, mTLS), authorize every request server-side + tenant isolation. Edge: TLS, WAF, DDoS absorption via CDN/anycast + rate limiting + load shedding. Data: encrypt in transit + at rest, secrets manager, PII minimization + tokenization + GDPR deletion path, audit logs. Bound blast radius: least privilege, network segmentation, no implicit trust.
+
+One line each:
+
+- **Active-active multi-region** -> serve everywhere; pin writes to a home region; eventual cross-region.
+- **Canary + feature flags** -> ship risky changes gradually with an instant rollback.
+- **Security** -> authorize every request, encrypt everything, minimize PII, limit blast radius.
+`
+      }
+    ]
+  },
+  {
+    "id": "networking-deep-dive",
+    "title": "Networking Deep Dive",
+    "topics": [
+      {
+        "id": "transport-tcp-udp",
+        "title": "TCP vs UDP & Connection Basics",
+        "content": `> Har network call ki neeव transport protocol par tiki hai. Kab reliable stream chahiye, kab speed.
+
+## TCP — reliable, ordered stream
+
+3-way handshake (SYN -> SYN-ACK -> ACK) se connection banta hai, phir bytes ka ordered stream. Kho gaya packet -> retransmit. Congestion control (slow start) network ko flood nahi karta.
+
+- **Guarantees:** delivery, order, no duplicates
+- **Cost:** handshake latency (1 RTT), head-of-line blocking (ek lost packet baaki ko rok deta hai), per-connection state
+- Use: HTTP, DB connections, anything where correctness > a few ms
+
+## UDP — fast, fire-and-forget
+
+No handshake, no retransmit, no ordering. Bas datagrams bhejo. App khud jo chahiye wo handle kare.
+
+- **Cost:** packets kho/reorder ho sakte hain
+- Use: DNS, video/voice calls (ek dropped frame chalega, delay nahi), gaming, QUIC (jo reliability UDP ke upar khud build karta hai)
+
+## Connection reuse
+
+Handshake (aur TLS) mehenga hai. Isliye:
+
+- **Keep-alive** — ek TCP connection par kai HTTP requests
+- **Connection pooling** — client (browser, HTTP client, DB driver) reuse karता hai (Ch: Connection Pooling)
+- **Load balancer** connection termination — client<->LB ek connection, LB<->backend alag pool
+
+> Interview: "why is a cross-region call slow?" -> RTT × (TCP handshake + TLS handshake + request). Batch, parallelize, reuse connections, move compute/cache near the user.
+`
+      },
+      {
+        "id": "http-versions",
+        "title": "HTTP/1.1 vs HTTP/2 vs HTTP/3 (QUIC)",
+        "content": `> HTTP versions latency ke liye hi evolve hue. Interviewer poochh sakta hai "kaunsa use karoge aur kyun".
+
+## HTTP/1.1
+
+Ek connection par ek request at a time (response aane tak agli nahi). Browsers 6 parallel connections kholte the. **Head-of-line blocking** at the request level. Text headers, har request par repeat.
+
+Workarounds jo ab anti-patterns hain: domain sharding, sprite sheets, concatenating JS/CSS.
+
+## HTTP/2
+
+- **Multiplexing** — ek connection par kai concurrent streams (requests). No more 6-connection limit.
+- **Header compression** (HPACK)
+- **Server push** (mostly abandoned)
+- Still over TCP -> ek TCP packet loss **saare** streams ko rok deta hai (TCP-level head-of-line blocking)
+
+## HTTP/3 (over QUIC, over UDP)
+
+- **QUIC** = reliability + congestion control + TLS 1.3, built on UDP, in user space
+- **No TCP head-of-line blocking** — streams independent; ek stream ka lost packet baaki ko nahi rokta
+- **0-RTT / 1-RTT handshake** — connection + encryption ek saath (TCP+TLS = 2-3 RTT)
+- **Connection migration** — WiFi se mobile data switch karo, connection zinda (connection id, IP nahi)
+
+| | HTTP/1.1 | HTTP/2 | HTTP/3 |
+| --- | --- | --- | --- |
+| Transport | TCP | TCP | QUIC/UDP |
+| Concurrency | 1/conn (6 conns) | multiplexed | multiplexed |
+| HoL blocking | request-level | TCP packet-level | none |
+| Handshake | 2-3 RTT | 2-3 RTT | 0-1 RTT |
+
+> Default in 2026: HTTP/2 or HTTP/3 at the edge (CDN handles it), HTTP/1.1 or gRPC internally. Mobile/high-loss networks benefit most from HTTP/3.
+`
+      },
+      {
+        "id": "grpc-protobuf",
+        "title": "gRPC, Protobuf & REST vs RPC",
+        "content": `> Internal service-to-service calls ke liye REST hamesha best nahi. gRPC common choice hai.
+
+## Protobuf (Protocol Buffers)
+
+Schema-first binary serialization. Ek \`.proto\` file mein message + service definitions; codegen se typed clients/servers (any language).
+
+\`\`\`flow
+message User { int64 id = 1; string name = 2; }
+service UserService { rpc GetUser(GetUserRequest) returns (User); }
+\`\`\`
+
+- **Small + fast** — binary, field numbers not names, no whitespace (JSON se ~3-10x chhota, faster parse)
+- **Strongly typed contract** — client/server can't drift
+- **Backward compatible** if you only add fields with new numbers (never reuse/renumber)
+- Cost: not human-readable, needs the schema + tooling
+
+## gRPC
+
+RPC framework over HTTP/2 using protobuf. 4 call types: unary, server-streaming, client-streaming, bidirectional streaming. Built-in deadlines, cancellation, retries, load balancing, interceptors (auth/metrics/tracing).
+
+## REST vs gRPC — when
+
+| | REST/JSON | gRPC |
+| --- | --- | --- |
+| Audience | public APIs, browsers, humans | internal microservices, mobile |
+| Payload | JSON (readable, bigger) | protobuf (binary, small) |
+| Contract | OpenAPI (optional) | .proto (enforced) |
+| Streaming | SSE/WS bolt-on | first-class |
+| Browser | native | needs grpc-web proxy |
+
+> Common pattern: **REST/GraphQL at the edge** (public, browser-friendly) + **gRPC internally** (fast, typed, streaming). GraphQL when clients need flexible field selection / to avoid over-fetching.
+`
+      },
+      {
+        "id": "tls-dns",
+        "title": "TLS Handshake & DNS",
+        "content": `> Do cheezein har HTTPS request se pehle hoti hain — aur dono latency + failure points hain.
+
+## DNS resolution
+
+\`api.example.com\` -> IP. Recursive resolver -> root -> TLD (\`.com\`) -> authoritative NS -> record. Cached at every layer (browser, OS, resolver) with a **TTL**.
+
+- **Record types:** A (IPv4), AAAA (IPv6), CNAME (alias), MX (mail), TXT
+- **TTL trade-off:** low TTL = fast failover/changes, more DNS traffic; high TTL = fewer lookups, slow to change
+- **DNS-based routing** — GeoDNS (nearest region), weighted (canary / gradual migration), failover (health-checked)
+- First request to a new domain = a DNS round trip; then cached
+
+## TLS handshake (TLS 1.3)
+
+After TCP connect: client hello (+ key share) -> server hello (cert + key share) -> both derive keys -> encrypted. **1 RTT** in TLS 1.3 (was 2 in 1.2). **0-RTT resumption** for repeat connections (with replay caveats).
+
+- **Cert** — proves server identity, signed by a CA; browser checks chain + expiry + hostname + revocation
+- **SNI** — client says which hostname it wants (one IP hosts many sites)
+- **mTLS** — client also presents a cert (service-to-service auth)
+- **Termination** — usually at the LB/CDN (Ch: Reverse Proxy); re-encrypt or mTLS internally
+
+## Latency picture for a fresh request
+
+\`\`\`flow
+DNS lookup (~20-120ms if uncached)
+TCP handshake (1 RTT)
+TLS handshake (1 RTT, TLS 1.3)
+HTTP request + response (1 RTT + processing)
+\`\`\`
+
+That's why: cache DNS, reuse connections (keep-alive/pool), use a CDN (terminates close to the user), and consider HTTP/3 (folds handshakes together).
+`
+      },
+      {
+        "id": "networking-recap",
+        "title": "Quick Recap",
+        "content": `**TCP vs UDP** — TCP = reliable ordered stream (HTTP, DBs), handshake cost + head-of-line blocking. UDP = fast fire-and-forget (DNS, media, QUIC). Reuse connections (keep-alive, pooling) — handshakes are expensive.
+
+**HTTP versions** — 1.1 = one request at a time per connection. 2 = multiplexed streams over TCP (still TCP-level HoL blocking). 3 = QUIC over UDP: no HoL blocking, ~0-1 RTT handshake, connection migration. Edge = 2/3, internal = 1.1 or gRPC.
+
+**gRPC / protobuf** — schema-first binary RPC over HTTP/2. Small, fast, typed contract, first-class streaming. Use internally; REST/GraphQL at the public edge.
+
+**TLS + DNS** — every fresh HTTPS request = DNS lookup + TCP handshake + TLS handshake + request. TLS 1.3 = 1 RTT. Cache DNS (TTL trade-off), use DNS for geo/failover routing, terminate TLS at the CDN/LB.
+
+One line each:
+
+- **TCP** -> reliable stream; **UDP** -> fast, lossy.
+- **HTTP/3** -> QUIC/UDP, no head-of-line blocking, faster handshake, survives network switch.
+- **gRPC** -> typed binary RPC for internal services.
+- **TLS 1.3** -> 1-RTT encrypted handshake; terminate at the edge.
+`
+      }
+    ]
+  },
+  {
+    "id": "ids-and-media",
+    "title": "Distributed IDs & Media Pipelines",
+    "topics": [
+      {
+        "id": "distributed-id-generation",
+        "title": "Distributed ID Generation",
+        "content": `> "Design a system that generates unique IDs across many servers" — or it comes up inside every other design (tweet id, order id, message id).
+
+## Requirements
+
+Unique (no collisions ever), roughly **time-ordered** (so they sort by creation, help DB index locality), high throughput, no single bottleneck, compact.
+
+## Options
+
+### Auto-increment (single DB)
+
+Simple, ordered. But: single point of failure, can't scale writes, exposes volume ("id 4711 = 4711th user").
+
+### UUID v4 (random)
+
+No coordination, globally unique. But: 128-bit (big), **random -> terrible index locality** (every insert hits a random B-tree page). Not time-ordered.
+
+### UUID v7 / ULID
+
+Timestamp prefix + random suffix. Sortable by time, good index locality, still no coordination. **Great modern default** for most apps.
+
+### Snowflake (Twitter) — 64-bit
+
+\`\`\`flow
+| 41 bits: timestamp (ms since epoch) | 10 bits: machine id | 12 bits: per-ms sequence |
+\`\`\`
+
+- 41 bits ms -> ~69 years; 10 bits -> 1024 nodes; 12 bits -> 4096 ids per node per ms
+- Time-ordered, compact (fits a bigint), no coordination at request time
+- Needs: unique machine id per node (config / ZooKeeper), NTP-synced clocks (clock going backwards = problem -> wait or refuse)
+- Used by Twitter, Discord, Instagram (a variant)
+
+### Ticket / range server
+
+A service hands out blocks of ids (e.g. "you get 1000-1999"); each server uses its block locally, asks for more when low. Few coordination calls, ordered-ish.
+
+## Choosing
+
+| Need | Pick |
+| --- | --- |
+| Simple app, Postgres | UUID v7 / bigserial |
+| Distributed, time-ordered, compact | Snowflake |
+| No infra, globally unique | ULID / UUID v7 |
+| Sequential + human-facing | ticket server / DB sequence |
+`
+      },
+      {
+        "id": "video-transcoding-pipeline",
+        "title": "Video Upload & Transcoding Pipeline",
+        "content": `> "Design YouTube's upload path." A raw 4K upload is useless to a phone on 3G — you need many versions.
+
+## Upload
+
+\`\`\`flow
+Client -> request presigned URL -> upload directly to S3 (chunked / resumable, Ch: Object Storage)
+S3 event -> "new upload" message on a queue
+\`\`\`
+
+Don't proxy GBs through your API. Validate (type, size, duration), maybe a quick virus/content scan.
+
+## Transcoding (the heavy part)
+
+A raw video -> split into segments (~2-10s each) -> a fleet of **transcoding workers** (GPU/CPU, autoscaled, spot instances) process segments **in parallel** -> each produces multiple **renditions** (240p, 480p, 720p, 1080p, 4K; different codecs H.264/H.265/AV1).
+
+\`\`\`flow
+Queue -> Transcode workers (parallel per segment × per rendition)
+-> write outputs to S3
+-> packager: create HLS/DASH manifests
+-> mark video "ready" -> notify uploader
+\`\`\`
+
+- **Pipeline stages** as separate queue steps: probe -> transcode -> thumbnail -> audio normalize -> package -> QC. Each retryable, DLQ on failure.
+- **Idempotent** per segment (retry-safe); track progress in a DB (\`video_jobs\`)
+- Priority queue: paid/creator uploads first
+- Also generate: thumbnails, preview sprites, captions (speech-to-text), content-ID / moderation checks
+
+## Also
+
+- Metadata service (title, owner, privacy, status) in an OLTP DB
+- View counts -> Count-Min / approximate + async (Ch: probabilistic); don't increment a row per view
+- Search index updated via CDC when a video goes public
+`
+      },
+      {
+        "id": "adaptive-streaming-delivery",
+        "title": "Adaptive Bitrate Streaming & Delivery",
+        "content": `> The playback path: get the right quality to each viewer, over a CDN, adjusting to their changing bandwidth.
+
+## Adaptive Bitrate (ABR) — HLS / DASH
+
+Video is stored as short **segments** (2-10s) at **multiple bitrates**, plus a **manifest** (playlist) listing them.
+
+\`\`\`flow
+manifest.m3u8:
+  240p  -> seg1_240.ts, seg2_240.ts, ...
+  720p  -> seg1_720.ts, seg2_720.ts, ...
+  1080p -> ...
+\`\`\`
+
+The **player** measures download speed + buffer level and picks the next segment's bitrate — drops to 480p on a slow network, climbs back to 1080p when it recovers. Server just serves files; intelligence is client-side.
+
+- **HLS** (Apple, \`.m3u8\` + \`.ts\`/CMAF) — universal
+- **DASH** (\`.mpd\`) — codec-agnostic standard
+- **Low-latency** variants (LL-HLS, LL-DASH) for near-live
+
+## Delivery via CDN
+
+Segments + manifests are static files -> **CDN** (Ch: CDN). Edge caches segments; origin (S3) only on miss. A popular video = ~100% cache hit at the edge -> origin barely touched.
+
+- **Signed URLs / tokens** for paid content; geo-restrictions
+- **Multi-CDN** for resilience + cost (route by performance/price)
+- Prefetch the next 1-2 segments
+
+## Live streaming (extra)
+
+\`\`\`flow
+Broadcaster -> RTMP/SRT ingest -> transcode to ABR renditions in real time
+-> package to LL-HLS segments -> CDN -> viewers (few seconds latency)
+\`\`\`
+For sub-second (auctions, betting): WebRTC instead of HLS.
+`
+      },
+      {
+        "id": "ids-media-recap",
+        "title": "Quick Recap",
+        "content": `**Distributed IDs** — need unique + roughly time-ordered + no bottleneck. Auto-increment (SPOF, leaks volume), UUIDv4 (random -> bad index locality), **UUIDv7/ULID** (time-prefixed, great default), **Snowflake** 64-bit (timestamp + machine id + sequence — compact, ordered, distributed; needs machine ids + synced clocks), ticket/range server (blocks of ids).
+
+**Video pipeline** — presigned chunked upload to S3 -> queue -> parallel transcode workers produce many renditions (240p..4K) per segment -> package HLS/DASH manifests -> mark ready. Pipeline = separate retryable queue stages (probe, transcode, thumbnail, caption, moderate, package).
+
+**Adaptive streaming** — store segments at multiple bitrates + a manifest; the **player** picks bitrate from measured bandwidth + buffer. HLS/DASH. Serve segments (static files) via CDN — popular videos are ~all edge cache hits. Live = real-time transcode -> LL-HLS -> CDN; sub-second = WebRTC.
+
+One line each:
+
+- **Snowflake ID** -> timestamp + machine + sequence = sortable 64-bit id, no coordination.
+- **Transcoding** -> one upload -> many parallel segment/rendition jobs on a queue.
+- **ABR (HLS/DASH)** -> client switches quality per segment; CDN serves the files.
+`
+      }
+    ]
   }
 ];

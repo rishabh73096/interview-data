@@ -42,10 +42,10 @@ const sections: {
   {
     href: '/system-design',
     title: 'System Design Notebook',
-    stat: '65 topics · 16 chapters',
-    count: 65,
+    stat: '95 topics · 24 chapters',
+    count: 95,
     description:
-      'Proper notebook-style notes, not one-liners — from Requirements, Capacity, API & DB design, SQL vs NoSQL, Indexing and Caching, through scaling, replication, sharding, queues, Kafka, CAP, consistency and Saga, to gateways, rate limiting, circuit breakers, retries, observability, CDN, S3, connection pooling, transactions, locking, isolation levels, failover and disaster recovery.',
+      'FAANG-level notebook notes, not one-liners — requirements & estimation, databases, indexing, caching, scaling, replication, sharding, queues, Kafka, CAP, consensus (Raft), quorums, gossip, Merkle trees, Bloom filters, HyperLogLog, LSM vs B-tree, CDC, OLAP, real-time transports, stream processing, newsfeed fan-out, geospatial indexing, CRDTs, plus the interview framework, latency numbers, 20 canonical designs and senior signals.',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
         <polygon points="12 2 2 7 12 12 22 7 12 2" />

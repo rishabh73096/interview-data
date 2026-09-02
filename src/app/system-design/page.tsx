@@ -112,11 +112,11 @@ const SystemDesignPage: React.FC = () => {
         description={
           <>
             {totalTopics} topics across {systemDesignChapters.length} chapters — from requirements,
-            capacity, API &amp; database design, indexing and caching, through scaling, replication,
-            sharding, queues, Kafka, CAP, consistency and Saga, to gateways, rate limiting, circuit
-            breakers, retries, observability, CDN, S3, connection pooling, transactions, locking,
-            failover, disaster recovery, search &amp; Elasticsearch, delivery guarantees and idempotency.
-            Written as proper notebook notes, not interview one-liners.
+            estimation, databases, indexing and caching, through scaling, replication, sharding, queues,
+            Kafka, CAP, consensus, quorums, gossip, Merkle trees, Bloom filters, HyperLogLog, LSM vs
+            B-tree, CDC, OLAP, real-time transports, stream processing, newsfeed fan-out, geospatial
+            indexing and CRDTs — plus the interview framework, latency numbers, 20 canonical designs and
+            the senior signals interviewers look for. Notebook notes, not interview one-liners.
           </>
         }
       />
