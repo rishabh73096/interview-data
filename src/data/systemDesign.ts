@@ -3720,5 +3720,625 @@ One line each:
 `
       }
     ]
+  },
+  {
+    "id": "payments-deep-dive",
+    "title": "Payments Deep Dive",
+    "topics": [
+      {
+        "id": "double-entry-ledger",
+        "title": "Double-Entry Ledger",
+        "content": `> Money ko ek mutable \`balance\` column mein rakhna = bug ka nyota. Real payment systems ek **immutable, append-only ledger** rakhte hain — accounting ka 500-saal purana pattern.
+
+## The rule
+
+Har transaction **do (ya zyada) entries** likhta hai jinka sum **zero** hota hai: ek account se debit, doosre mein credit. Ledger append-only — entry kabhi update/delete nahi hoti; galti = ek reversing entry.
+
+\`\`\`flow
+Transfer Rs 100 (Alice -> Bob):
+  entry 1:  account=Alice  amount=-100   txn=t1
+  entry 2:  account=Bob    amount=+100   txn=t1
+  sum(entries where txn=t1) == 0   (always)
+\`\`\`
+
+## Why
+
+- **Balance = SUM(entries)** for an account — derived, always correct, auditable
+- **Full history** — har rupaya kahan se aaya, kahan gaya
+- **Immutable** -> tamper-evident, easy to audit/reconcile
+- **Invariants** — total money in the system is conserved (sum of all entries == 0); alert if it ever isn't
+
+## Practical
+
+- Entries table: \`(id, account_id, amount, currency, txn_id, type, created_at)\`, indexes on \`account_id\` and \`txn_id\`
+- Balance: either \`SUM\` on read (small), or a **materialized balance** updated in the **same transaction** as the entries (with the ledger as source of truth for reconciliation)
+- Never store cross-currency in one entry; convert explicitly with its own entries
+- Money in **minor units as integers** (paise/cents), never floats
+- Idempotency key on the transfer (Ch: Idempotency) — retried transfer must not double-post
+`
+      },
+      {
+        "id": "payment-flow-idempotency",
+        "title": "Payment Flow, PSPs & Idempotency",
+        "content": `> "Design a checkout / payment system." The hard requirement: **never double-charge, never lose a successful payment, always be reconcilable.**
+
+## Players
+
+- **You** (merchant backend) · **PSP / gateway** (Stripe, Razorpay, Adyen) · **card networks / banks** · **customer**
+- You almost never touch raw card data (PCI scope) — the PSP tokenizes it; you store a token.
+
+## Flow (hosted / PaymentIntent style)
+
+\`\`\`flow
+1. Client -> your backend: "start checkout for order 42"
+2. Backend: create Order (status=PENDING) + PaymentIntent at PSP (amount, currency, idempotency-key)
+3. Backend -> client: client secret
+4. Client -> PSP directly: card details + confirm (3D Secure / OTP challenge may happen)
+5. PSP -> your WEBHOOK: payment_intent.succeeded (or .failed)   <-- source of truth
+6. Webhook handler: verify signature -> idempotency check (event id) -> mark Order PAID -> fulfil
+7. (Client also gets a result, but you DO NOT trust it to mark paid)
+\`\`\`
+
+## Why webhook, not client
+
+Client can close the tab after paying, lose network, or be tampered with. The **PSP webhook** (server-to-server, signed) is the only reliable "it actually succeeded" (Ch: Webhooks).
+
+## Idempotency everywhere
+
+- **Idempotency-Key** on the create-charge call to the PSP -> a retried request returns the same charge, doesn't create a second
+- **Event id** dedup on the webhook -> the same \`payment.succeeded\` delivered 3× fulfils once
+- **Order state machine** — \`PENDING -> PAID -> FULFILLED\` / \`FAILED\` / \`REFUNDED\`; transitions guarded, idempotent
+
+## Refunds, disputes, retries
+
+- Refund = its own idempotent operation + ledger entries (reverse the money)
+- Failed payment -> allow retry on the same order (new PaymentIntent), don't create a new order
+- Chargeback/dispute webhooks -> mark order, adjust ledger, alert ops
+`
+      },
+      {
+        "id": "payment-reconciliation",
+        "title": "Reconciliation & Consistency",
+        "content": `> Your system and the PSP are two independent databases. They **will** drift (missed webhook, timeout, bug). Reconciliation finds and fixes the drift.
+
+## The drift scenarios
+
+- Webhook lost / your handler was down -> PSP says PAID, you say PENDING
+- You marked PAID, then a later failure -> PSP says FAILED
+- Partial refund applied at PSP but not recorded
+- A charge succeeded but the response timed out and you never created the record
+
+## Reconciliation job (runs continuously / hourly / daily)
+
+\`\`\`flow
+For a time window:
+  fetch all transactions from PSP (their API / settlement report)
+  fetch all transactions from your ledger
+  match on payment_intent_id / charge_id
+  -> in PSP not in you    -> ingest it (mark order, post ledger entries)
+  -> in you not in PSP    -> investigate (stuck pending -> query PSP -> resolve or expire)
+  -> amount / status mismatch -> flag for manual review + alert
+\`\`\`
+
+## Also
+
+- **Settlement** — PSP pays you in batches (T+2), minus fees; reconcile the payout amount against expected (sum of charges − fees − refunds − chargebacks). Fees are their own ledger entries.
+- **Outbox pattern** (Ch: Event-Driven) — write the order status + a "fulfilment needed" event in one DB transaction, so you never lose the follow-up
+- **Consistency choice** — within your system, the payment write path is **strongly consistent** (single primary, transaction: ledger entries + order status together). Fulfilment can be async/eventual.
+- **Metrics/alerts** — pending payments older than N minutes, ledger sum ≠ 0, reconciliation mismatch count, webhook processing lag
+
+> The interview answer: "PSP webhook is the source of truth, everything idempotent (charge key + event id + order state machine), an append-only double-entry ledger, and a reconciliation job that continuously compares our ledger to the PSP and repairs drift."
+`
+      },
+      {
+        "id": "payments-recap",
+        "title": "Quick Recap",
+        "content": `**Double-entry ledger** — immutable, append-only; every transaction posts entries summing to zero (debit one account, credit another). Balance = SUM(entries), always auditable. Money as integer minor units. Corrections = reversing entries, never edits.
+
+**Payment flow** — Order PENDING -> create PaymentIntent at PSP (with idempotency key) -> client pays PSP directly (3DS challenge) -> **PSP webhook** (signed, verified, event-id deduped) marks Order PAID -> fulfil. Never trust the client's result. Refunds/disputes are their own idempotent operations + ledger entries.
+
+**Reconciliation** — your DB and the PSP drift (missed webhooks, timeouts). A job continuously compares your ledger to the PSP's transactions, ingests what you missed, investigates stuck pendings, flags mismatches. Reconcile settlement payouts (charges − fees − refunds). Outbox pattern so fulfilment events are never lost.
+
+One line each:
+
+- **Double-entry ledger** -> append-only, entries net to zero, balance is derived and auditable.
+- **PSP webhook** -> the source of truth for "payment succeeded" (idempotent handler).
+- **Reconciliation** -> continuously diff your ledger vs the PSP and repair drift.
+`
+      }
+    ]
+  },
+  {
+    "id": "ml-system-design",
+    "title": "ML System Design",
+    "topics": [
+      {
+        "id": "ml-system-components",
+        "title": "ML System Components (Training vs Serving)",
+        "content": `> At Google/Meta, "design the ranking/recommendation system" is common. You're not asked to invent models — you're asked to design the **system around** a model: data, features, training, serving, monitoring.
+
+## The two loops
+
+\`\`\`flow
+OFFLINE (training):  raw data -> feature pipeline -> training set -> train model -> evaluate -> registry
+ONLINE (serving):    request -> fetch features -> model inference -> post-process -> response -> log
+\`\`\`
+
+## Components
+
+- **Data collection** — events, logs, labels (clicks, purchases, ratings, dwell time). Often via a stream (Kafka) + a warehouse (Ch: OLAP).
+- **Feature pipeline** — transform raw data into features. Must produce the **same** feature values offline (training) and online (serving) — else "training/serving skew" silently kills accuracy.
+- **Feature store** (next topic) — computed features, served fast online, materialized offline.
+- **Training** — batch job (Spark/Ray/dedicated GPU cluster), scheduled or triggered by data drift. Versioned datasets + code + hyperparams for reproducibility.
+- **Model registry** — versioned model artifacts + metadata (metrics, training data version).
+- **Serving** — a service that loads a model and does inference (next-next topic).
+- **Evaluation** — offline metrics (AUC, precision@k, NDCG) + **online A/B tests** (the real signal: did CTR / revenue / retention move?).
+- **Monitoring** — latency, feature drift, prediction drift, model performance decay.
+
+## The candidate-generation → ranking pattern
+
+Most large recommenders are two stages:
+
+\`\`\`flow
+Millions of items
+-> Candidate generation (cheap: retrieve ~hundreds — collaborative filtering, embeddings + ANN, rules)
+-> Ranking (expensive model: score those hundreds precisely with many features)
+-> Re-rank (business rules: diversity, freshness, don't repeat, sponsored)
+-> top N
+\`\`\`
+`
+      },
+      {
+        "id": "recommendation-ranking",
+        "title": "Recommendation & Ranking Systems",
+        "content": `> "Design YouTube recommendations / a news feed ranker / 'people you may know' / search ranking." All follow the candidate-generation → ranking → re-rank shape.
+
+## Candidate generation (retrieval)
+
+Goal: from millions of items, get ~hundreds that are plausibly relevant, **fast** (<10ms).
+
+- **Collaborative filtering** — "users like you watched X" (matrix factorization / co-occurrence)
+- **Content-based** — item embeddings; recommend items similar to what the user engaged with
+- **Two-tower / embedding retrieval** — a model maps users and items into the same vector space; retrieve nearest item vectors to the user vector via **ANN** (approximate nearest neighbor: HNSW, FAISS, ScaNN, a vector DB)
+- **Rules / heuristics** — trending, from followed accounts, same category, geo
+- Usually **several sources unioned**
+
+## Ranking
+
+Score each candidate with a heavier model (gradient-boosted trees or a deep net) using **many features**:
+
+- User: history, demographics, session context, device
+- Item: age, popularity, category, creator, quality signals
+- User×Item: past interaction, embedding similarity, same-author affinity
+- Context: time of day, what they just watched, position
+
+Predict: P(click), P(watch > 30s), P(like), P(purchase) — often **multi-objective**, combined into one score.
+
+## Re-rank / business layer
+
+Diversity (don't show 10 items from one creator), freshness, dedup ("already seen"), fairness, sponsored slots, exploration (show some uncertain items to learn).
+
+## Serving realities
+
+- Precompute candidates for active users (offline) + freshen online
+- Cache the ranked list with a short TTL; paginate
+- Log every impression + outcome -> next training set (closed loop; beware feedback loops / popularity bias)
+- Cold start (new user/item) -> fall back to popularity / content-based / onboarding signals
+`
+      },
+      {
+        "id": "feature-stores",
+        "title": "Feature Stores & Online/Offline Consistency",
+        "content": `> The #1 practical ML-infra problem: the feature you compute during training must **exactly match** the one you compute while serving. A feature store solves this.
+
+## The skew problem
+
+\`\`\`flow
+Training: "user's avg order value over 30 days" computed in a Spark job over the warehouse
+Serving:  same feature computed in application code from the OLTP DB
+-> subtle differences (timezone, which orders count, rounding) -> model sees different inputs -> worse in production than in eval
+\`\`\`
+
+## Feature store = one definition, two access paths
+
+- **Offline store** — historical feature values (in a warehouse / Parquet), for building training sets with **point-in-time correctness** (the feature as it was *at the time of the label*, no future leakage)
+- **Online store** — the latest feature values in a low-latency KV store (Redis, DynamoDB, a dedicated store) for serving, read in single-digit ms
+- **One transformation definition** feeds both (batch job materializes offline + pushes to online; or streaming for fresh features)
+
+## Feature types
+
+- **Batch** — recomputed periodically (user's 30-day spend)
+- **Streaming / near-real-time** — updated from an event stream (clicks in the last 5 min, Ch: stream processing)
+- **Real-time / request-time** — computed from the request itself (query length, current cart)
+
+## Tools
+
+Feast, Tecton, Vertex AI / SageMaker Feature Store, or a home-grown Kafka + Redis + Spark setup.
+
+> Interview line: "a feature store gives one feature definition with an offline path (point-in-time-correct training sets) and an online path (ms reads for serving), eliminating training/serving skew."
+`
+      },
+      {
+        "id": "model-serving-monitoring",
+        "title": "Model Serving & Monitoring",
+        "content": `> Deploying a model is deploying a service — plus ML-specific concerns: drift, rollback on quality (not just errors), and A/B testing.
+
+## Serving patterns
+
+- **Online / real-time** — a low-latency inference service (TF Serving, TorchServe, Triton, ONNX Runtime, or a plain API). Batch requests, GPU where it pays off, cache repeated inputs.
+- **Batch / offline** — score everything nightly, store results, serve from a KV store (recommendations for all users precomputed). Cheapest when freshness isn't critical.
+- **Streaming** — score events as they arrive (fraud detection).
+- **Edge / on-device** — model runs on the phone (privacy, latency, offline).
+
+## Deployment & rollout
+
+- **Model registry** -> deploy a specific version; the artifact is immutable
+- **Shadow mode** — run the new model on real traffic, log predictions, **don't serve them**; compare to the current model
+- **Canary / A-B** — route 5% -> 50% -> 100%, gated on **online metrics** (CTR, revenue, latency), auto-rollback on regression
+- Keep the previous model hot for instant rollback
+
+## Monitoring (beyond latency/errors)
+
+- **Feature drift** — input distributions shift vs training (new user behavior, a bug upstream) -> alert
+- **Prediction drift** — output distribution shifts
+- **Performance decay** — once labels arrive (a purchase, a click), compute real accuracy/AUC over time; models rot as the world changes -> triggers retraining
+- **Data quality** — nulls, out-of-range, schema changes in features
+- **Fairness / segment metrics** — does it work for all user groups?
+
+## Retraining loop
+
+\`\`\`flow
+Serving logs (features + predictions) + delayed labels
+-> new training set -> retrain (scheduled, or triggered by drift/decay)
+-> offline eval -> shadow -> canary -> promote
+\`\`\`
+`
+      },
+      {
+        "id": "ml-system-recap",
+        "title": "Quick Recap",
+        "content": `**ML system** = the system *around* a model: data collection -> feature pipeline -> training (offline) -> registry -> serving (online) -> monitoring -> retraining loop. You design the plumbing, not the algorithm.
+
+**Recommendation / ranking** = two (three) stages: **candidate generation** (cheap retrieval of ~hundreds from millions — collaborative filtering, embedding + ANN, rules) -> **ranking** (heavy model, many features, multi-objective) -> **re-rank** (diversity, freshness, dedup, sponsored, exploration). Log impressions+outcomes as the next training set. Handle cold start with popularity/content fallbacks.
+
+**Feature store** — one feature definition, two paths: **offline** (point-in-time-correct training sets, no leakage) + **online** (ms KV reads for serving). Eliminates training/serving skew. Feature types: batch, streaming, request-time.
+
+**Model serving** — it's a service + ML concerns: online vs batch vs streaming vs edge serving; deploy via registry -> shadow -> canary on **online metrics** -> promote, keep old model for rollback. Monitor feature drift, prediction drift, and (once labels arrive) real performance decay -> retrain.
+
+One line each:
+
+- **Candidate generation -> ranking -> re-rank** -> narrow millions to hundreds cheaply, then score precisely, then apply business rules.
+- **Feature store** -> same feature offline and online — kills training/serving skew.
+- **Model monitoring** -> watch drift + decay, not just latency; retrain when the world moves.
+`
+      }
+    ]
+  },
+  {
+    "id": "worked-designs",
+    "title": "End-to-End Worked Designs",
+    "topics": [
+      {
+        "id": "design-twitter-feed",
+        "title": "Design Twitter / News Feed",
+        "content": `> Run it through the 6-step framework (Ch: The System Design Interview).
+
+## 1. Requirements
+
+- **Functional:** post a tweet (text + media), follow users, home timeline (tweets from people you follow, recent-first), user profile timeline, likes. Skip: DMs, search, trends (v1).
+- **Non-functional:** timeline read must be **fast (<200ms)** and **highly available**; eventual consistency is fine (a tweet showing up 1-2s late is OK); read-heavy.
+
+## 2. Estimation
+
+- 300M DAU, each opens the app ~10×/day -> ~3B timeline reads/day -> ~35k RPS avg, ~150k peak.
+- 300M × 0.5 tweets/day -> 150M tweets/day -> ~1,700 writes/sec.
+- **Read:write ≈ 100:1** -> optimize reads hard.
+- Tweet ≈ 300 bytes -> 150M × 300B ≈ 45 GB/day of tweet text.
+
+## 3. API + data
+
+\`\`\`flow
+POST /tweets            {text, mediaIds}         -> tweetId
+GET  /timeline?cursor=   -> [tweets], nextCursor
+POST /follow/:userId
+\`\`\`
+
+- \`tweets(id snowflake, author_id, text, media, created_at)\` — id is time-sortable (Ch: Snowflake)
+- \`follows(follower_id, followee_id)\` — indexed both ways
+- \`timeline:{userId}\` — a Redis list of tweet ids (the precomputed feed)
+
+## 4. High-level design
+
+\`\`\`flow
+Client -> LB -> API
+POST tweet -> write to tweets DB -> enqueue "fanout(tweetId, authorId)"
+Fanout workers -> get author's followers -> LPUSH tweetId into each follower's timeline:{id} (cap ~800)
+GET timeline -> read timeline:{me} ids -> multi-get tweets from cache/DB -> hydrate -> return
+\`\`\`
+
+## 5. Deep dive — the celebrity problem
+
+Fan-out on write breaks for a user with 50M followers (50M list writes per tweet). **Hybrid:**
+
+- Regular users (< ~10k followers): fan-out on write
+- Celebrities: **do NOT fan out**. At timeline read: \`merge(precomputed timeline, live-fetch recent tweets of the celebrities I follow)\`, sort, return.
+- Cache the merged result briefly.
+
+Ranking: v1 chronological; v2 an ML ranker (Ch: Recommendation) scoring engagement.
+
+## 6. Bottlenecks
+
+- Fanout queue lag on viral spikes -> autoscale workers, prioritize
+- Hot tweet (millions read the same one) -> it's in cache, fine
+- Timeline store per user -> shard by userId; cap list length; regenerate for users who return after being inactive
+- Media -> object storage + CDN (Ch: CDN, S3)
+`
+      },
+      {
+        "id": "design-chat-system",
+        "title": "Design a Chat System (WhatsApp)",
+        "content": `> 1:1 + group messaging, delivered fast, reliably, in order, at scale.
+
+## 1. Requirements
+
+- **Functional:** send/receive 1:1 messages, group chats, delivery + read receipts, online/last-seen, push when offline, message history, media.
+- **Non-functional:** **low latency** (<500ms delivered), reliable (no lost messages), ordered within a conversation, works on flaky mobile networks.
+
+## 2. Estimation
+
+- 500M DAU, 40 messages sent/user/day -> 20B messages/day -> ~230k msgs/sec avg, ~1M peak.
+- Message ≈ 200 bytes -> 20B × 200B ≈ 4 TB/day. Media in object storage.
+- Concurrent connections ≈ 100M+.
+
+## 3. API + data
+
+\`\`\`flow
+WS: send {conversationId, clientMsgId, text}  -> ack {serverMsgId, seq, ts}
+WS: incoming {conversationId, serverMsgId, seq, senderId, text, ts}
+WS: receipt {serverMsgId, status: delivered|read}
+GET /conversations/:id/messages?before=seq   (history / catch-up)
+\`\`\`
+
+- \`messages(conversation_id, seq, sender_id, body, created_at)\` — **\`seq\`** is a per-conversation monotonic counter -> ordering. Partition by \`conversation_id\`. Wide-column store (Cassandra) fits: write-heavy, time-ordered, LSM (Ch: LSM).
+- \`conversation_members\`, \`user_connection -> gateway\` (Redis)
+
+## 4. High-level design
+
+\`\`\`flow
+Phone <-WebSocket-> WS Gateway (many; each ~100k conns)
+Send: gateway -> Chat service -> assign seq -> persist message -> ack sender
+      -> for each recipient: look up their gateway (Redis) -> route via pub/sub backplane (Kafka/Redis)
+      -> recipient's gateway pushes over their socket
+      -> recipient offline? -> push notification (APNs/FCM) + store as undelivered
+\`\`\`
+
+## 5. Deep dive — reliability & ordering
+
+- **Ordering:** per-conversation \`seq\` from a single writer per conversation (or a sequencer). Client renders by \`seq\`.
+- **At-least-once + dedup:** sender attaches \`clientMsgId\`; server dedups; retries safe (Ch: Idempotency).
+- **Catch-up on reconnect:** client sends its last-seen \`seq\` -> server streams everything after it. This is what makes "10 min offline" not look like data loss.
+- **Groups:** small groups -> fan-out on write to each member's delivery. Large groups (100k) -> fan-out on read / a broadcast topic per group.
+- **Receipts:** recipient's gateway sends \`delivered\`; on view, \`read\`. Fan these back to the sender.
+- **E2E encryption** (Signal protocol): server routes ciphertext, can't read it; key exchange per device.
+
+## 6. Bottlenecks
+
+- Gateway scaling -> add gateways + connection registry + backplane (Ch: real-time transports)
+- Hot group -> dedicated handling, rate-limit
+- Media -> presigned upload to S3, send a reference; download via CDN
+- Storage -> messages partitioned by conversation; old messages to cold storage; some clients keep history locally only
+`
+      },
+      {
+        "id": "design-youtube",
+        "title": "Design YouTube / Video Streaming",
+        "content": `> Upload, process, store, and stream video to billions — at every quality, over any network.
+
+## 1. Requirements
+
+- **Functional:** upload video, watch video (adaptive quality), search, view counts, comments, likes, channels/subscriptions, recommendations.
+- **Non-functional:** playback starts fast + rarely buffers (availability + low startup latency), massive read scale, upload can be slow but must be reliable, storage is huge.
+
+## 2. Estimation
+
+- 2B users, 1B hours watched/day. 500 hours uploaded/minute.
+- A 10-min 1080p video ≈ 300 MB; stored in ~5 renditions ≈ 1 GB per video.
+- 500 hrs/min × 60 × 24 = 720k hrs/day uploaded -> petabytes/month -> object storage, tiered.
+- Reads (watch) hugely outnumber writes -> **CDN is the whole game**.
+
+## 3. API + data
+
+\`\`\`flow
+POST /videos  -> {uploadUrl (presigned), videoId}
+POST /videos/:id/complete
+GET  /videos/:id  -> metadata + manifest URL
+GET  /watch/:id   (player fetches manifest, then segments from CDN)
+\`\`\`
+
+- \`videos(id, channel_id, title, status, duration, privacy, created_at)\` — OLTP DB
+- Segments + manifests + thumbnails -> object storage, fronted by CDN
+- View counts -> approximate + async (Ch: probabilistic), not a row update per view
+
+## 4. High-level design
+
+\`\`\`flow
+UPLOAD:  client -> presigned URL -> S3 (chunked/resumable) -> S3 event -> queue
+PROCESS: queue -> probe -> split into segments -> parallel transcode farm (many renditions/codecs)
+         -> package HLS/DASH manifests -> write to S3 -> mark video READY -> update search index (CDC)
+WATCH:   player -> metadata service -> manifest URL -> player fetches segments from CDN
+         -> CDN edge cache HIT (popular) or MISS -> S3 origin
+\`\`\`
+
+(Full detail in Ch: Video Pipeline + Adaptive Streaming.)
+
+## 5. Deep dive — delivery & scale
+
+- **CDN**: segments are immutable static files -> near-100% edge hit rate for popular videos; origin barely touched. Multi-CDN for cost + resilience.
+- **ABR**: player switches bitrate per segment based on bandwidth + buffer (Ch: Adaptive Streaming).
+- **Popularity skew**: 1% of videos = most traffic -> those live entirely in CDN + hot storage. Long-tail -> cheaper/cold storage, slower first byte.
+- **Recommendations** drive most watch time -> candidate-gen + ranking (Ch: Recommendation).
+- **Live**: real-time transcode -> LL-HLS -> CDN.
+
+## 6. Bottlenecks
+
+- Transcode farm cost -> spot instances, autoscale on queue depth, prioritize by tier, AV1 for popular videos (smaller, saves bandwidth)
+- Thumbnail/preview generation, captions (speech-to-text), content-ID / moderation — separate pipeline stages
+- Comments/likes -> separate services, sharded; counts approximate + async
+`
+      },
+      {
+        "id": "design-uber",
+        "title": "Design Uber / Ride-Hailing",
+        "content": `> Match riders to nearby drivers in real time; track the trip; handle surge; be reliable with money involved.
+
+## 1. Requirements
+
+- **Functional:** driver shares location continuously; rider requests a ride; system finds nearby available drivers and dispatches; both track each other live during the trip; fare calculation + payment; ratings.
+- **Non-functional:** dispatch is **latency-sensitive** (a few seconds), location updates are **very high write volume**, must be highly available; payment must be consistent.
+
+## 2. Estimation
+
+- 5M active drivers, location update every 4s -> ~1.25M location writes/sec. This is the dominant load.
+- 20M rides/day -> ~230 ride requests/sec avg, spiky (rush hour, events) -> peak ×5+.
+
+## 3. API + data
+
+\`\`\`flow
+WS/HTTP: driver -> POST /location {lat, lng}   (every 4s)
+POST /rides/request {pickup, dropoff}  -> rideId, then WS updates
+WS: ride updates {status: matching|driver_assigned|arriving|in_trip|completed, driverLocation}
+\`\`\`
+
+- **Driver location** -> in-memory geo-index, NOT a durable DB row per update. Redis GEO or a cell -> drivers map, keyed by **geohash / H3 cell** (Ch: Geospatial). TTL so stale drivers drop off.
+- \`rides(id, rider_id, driver_id, status, pickup, dropoff, fare, created_at)\` — OLTP, strongly consistent state machine
+- \`driver_status(driver_id, available|on_trip)\`
+
+## 4. High-level design
+
+\`\`\`flow
+Driver app --location--> Location service --> geo-index (Redis, sharded by region/cell)
+Rider requests ride --> Dispatch service:
+  compute rider's cell + neighbor cells -> fetch available drivers there
+  rank (ETA via routing service, driver rating, acceptance rate)
+  offer to best driver (timeout ~15s) -> declined/timeout -> next driver
+  accepted -> create ride (status=driver_assigned), mark driver on_trip
+Trip: both stream location via WS; ETA + route from routing service
+Complete -> compute fare (distance + time + surge) -> charge (Ch: Payments) -> ratings
+\`\`\`
+
+## 5. Deep dive — geo matching & surge
+
+- **Why cells:** \`WHERE distance < 2km\` can't be indexed. Geohash/H3 turns 2D into cell ids; query the rider's cell + 8 neighbors (rider may be near a cell edge), then exact-distance filter + rank.
+- **Sharding:** partition the geo-index by region/city -> each shard handles its own location writes; a city outage doesn't affect others.
+- **Surge:** per-cell demand/supply ratio computed continuously (stream processing, Ch: stream); multiplier applied to fare; shown to rider before confirm.
+- **Dispatch consistency:** offering a ride to a driver takes a short lock / atomic status change so two riders don't get the same driver (Ch: Distributed Locking / optimistic status update).
+
+## 6. Bottlenecks
+
+- 1.25M location writes/sec -> in-memory, regional shards, drop-to-sample if overloaded (every 4s is fine, don't need every one durable)
+- Routing/ETA service is heavy -> cache, precompute for common routes, approximate
+- Payment failures at trip end -> retry, don't block the rider from leaving; reconcile (Ch: Payments)
+`
+      },
+      {
+        "id": "design-key-value-store",
+        "title": "Design a Distributed Key-Value Store (Dynamo)",
+        "content": `> The canonical "distributed systems" design — it exercises consistent hashing, quorums, vector clocks, gossip, Merkle trees, LSM. (All in Ch 17-20.)
+
+## 1. Requirements
+
+- **Functional:** \`get(key)\`, \`put(key, value)\`. Values are opaque blobs, ~KB. No queries, no transactions, no joins.
+- **Non-functional:** **highly available** (always writable, even during failures — "always-on shopping cart"), horizontally scalable to thousands of nodes, low latency, tunable consistency. Chooses **AP** (Ch: CAP).
+
+## 2. Estimation
+
+- 100k+ ops/sec, terabytes of data, must run across many commodity nodes, expect constant node failures.
+
+## 3. Data placement — consistent hashing
+
+\`\`\`flow
+Nodes + keys on a ring (Ch: Consistent Hashing). key -> hash -> first N nodes clockwise = its replicas.
+Virtual nodes for even distribution. Add/remove a node -> only ~K/N keys move.
+\`\`\`
+
+## 4. Replication & consistency — quorums
+
+- Each key replicated to **N** nodes. **W** = writes must ack, **R** = reads must ack.
+- \`W + R > N\` -> a read overlaps the latest write (strong-ish). \`N=3, W=2, R=2\` is typical.
+- \`W=1\` -> fast, always writable, eventual. Tune per use case (Ch: Quorums).
+- **Hinted handoff:** target node down -> write to a temporary node with a "hint"; it forwards when the node recovers -> stays available during failures.
+
+## 5. Deep dive — conflicts, membership, repair
+
+- **Concurrent writes** to different replicas -> **vector clocks** attached to each version. Read returns both if concurrent -> client (or a merge function, e.g. cart = union) resolves; write back the reconciled version. (Or LWW if you accept losing a write.)
+- **Membership + failure detection:** **gossip** — nodes exchange "who's alive" with random peers; no coordinator (Ch: Gossip).
+- **Anti-entropy:** replicas drift (missed writes during a partition). **Merkle trees** per key-range -> compare root hashes -> sync only the divergent ranges cheaply (Ch: Merkle).
+- **Storage engine:** each node uses an **LSM tree** (fast writes, Bloom filters for reads) (Ch: LSM).
+- **Read repair:** on a read, if replicas disagree, push the newest version to the stale ones.
+
+## 6. Bottlenecks / trade-offs
+
+- Range scans are hard (keys hashed around the ring) — this store is point-lookup only
+- Eventual consistency pushes conflict handling to the app
+- Hot key -> that key's N nodes get hammered -> add caching, or split the key
+- This is Dynamo/Cassandra/Riak. Contrast: a **CP** store (single-primary + Raft, e.g. etcd) chooses consistency over availability.
+`
+      },
+      {
+        "id": "design-dropbox",
+        "title": "Design Dropbox / File Sync",
+        "content": `> Sync files across a user's devices: efficient for big files, handles conflicts, works offline.
+
+## 1. Requirements
+
+- **Functional:** upload/download files, sync changes across devices, share folders, version history, offline edits sync on reconnect.
+- **Non-functional:** efficient (don't re-upload a 1 GB file for a 1-byte change), reliable (no data loss), reasonable sync latency, storage-efficient (dedup).
+
+## 2. Estimation
+
+- 100M users, 100 GB each avg -> ~10 EB (exabytes) -> object storage, tiered, dedup essential.
+- Sync events: many small metadata ops; bulk bytes go direct to storage.
+
+## 3. Core idea — chunking + content-addressed storage
+
+\`\`\`flow
+File -> split into ~4 MB chunks -> hash each chunk (SHA-256)
+Store each chunk in object storage keyed by its hash (content-addressed)
+File = an ordered list of chunk hashes (the "file manifest")
+\`\`\`
+
+- **Dedup:** identical chunk stored once (across the file, across users) — huge savings
+- **Delta sync:** edit a file -> only the changed chunks' hashes differ -> upload only those chunks
+- **Compression + encryption** per chunk
+
+## 4. High-level design
+
+\`\`\`flow
+Client watches the local folder -> detects a change -> computes chunk hashes
+-> asks Metadata service "which of these chunks do you already have?"
+-> uploads missing chunks directly to object storage (presigned URLs, Ch: S3)
+-> commits new file manifest + version to Metadata service
+Metadata service -> notifies the user's other devices (long-poll / WebSocket)
+Other devices -> fetch the new manifest -> download only missing chunks -> reassemble
+\`\`\`
+
+Components: **Metadata service** (files, versions, chunk lists, sharing, permissions — an OLTP DB, sharded by user/namespace), **Block service** (chunk storage, dedup), **Notification service** (push changes to devices), **Client** (watcher, chunker, local DB of state).
+
+## 5. Deep dive — conflicts & consistency
+
+- **Conflict:** two devices edit the same file offline. On sync, detect divergent version chains -> keep both: \`report.docx\` and \`report (Alice's conflicted copy).docx\`. Don't silently lose an edit. (Simpler than OT/CRDT because files are opaque blobs.)
+- **Consistency:** metadata is the source of truth; a file "exists" only when its manifest is committed. Chunks uploaded but not committed = garbage-collected later.
+- **Ordering:** per-file version numbers; client sends "base version" -> server rejects if stale -> client re-syncs.
+- **Large folders / many small files:** batch metadata ops; watch OS limits on file watchers.
+
+## 6. Bottlenecks
+
+- Metadata service is the hot path -> shard by user, cache, keep ops small
+- Notification fan-out to devices -> pub/sub, or devices long-poll with a cursor
+- Storage cost -> dedup + compression + cold-tier old versions + cap version history
+- Bandwidth -> delta sync + LAN sync between nearby devices
+`
+      }
+    ]
   }
 ];

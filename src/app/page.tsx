@@ -42,10 +42,10 @@ const sections: {
   {
     href: '/system-design',
     title: 'System Design Notebook',
-    stat: '95 topics · 24 chapters',
-    count: 95,
+    stat: '119 topics · 29 chapters',
+    count: 119,
     description:
-      'FAANG-level notebook notes, not one-liners — requirements & estimation, databases, indexing, caching, scaling, replication, sharding, queues, Kafka, CAP, consensus (Raft), quorums, gossip, Merkle trees, Bloom filters, HyperLogLog, LSM vs B-tree, CDC, OLAP, real-time transports, stream processing, newsfeed fan-out, geospatial indexing, CRDTs, plus the interview framework, latency numbers, 20 canonical designs and senior signals.',
+      'FAANG-level notebook notes — estimation, databases, caching, scaling, replication, sharding, queues, Kafka, CAP, consensus, quorums, gossip, Merkle trees, Bloom filters, HyperLogLog, LSM vs B-tree, CDC, OLAP, real-time streaming, newsfeed fan-out, geospatial, CRDTs, HTTP/3, gRPC, Snowflake IDs, video pipelines, double-entry ledgers, ML system design — plus the interview framework, latency numbers, and full worked designs (Twitter, Chat, YouTube, Uber, Dynamo, Dropbox).',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
         <polygon points="12 2 2 7 12 12 22 7 12 2" />

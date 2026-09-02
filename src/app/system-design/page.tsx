@@ -111,12 +111,12 @@ const SystemDesignPage: React.FC = () => {
         accent="Notebook"
         description={
           <>
-            {totalTopics} topics across {systemDesignChapters.length} chapters — from requirements,
-            estimation, databases, indexing and caching, through scaling, replication, sharding, queues,
-            Kafka, CAP, consensus, quorums, gossip, Merkle trees, Bloom filters, HyperLogLog, LSM vs
-            B-tree, CDC, OLAP, real-time transports, stream processing, newsfeed fan-out, geospatial
-            indexing and CRDTs — plus the interview framework, latency numbers, 20 canonical designs and
-            the senior signals interviewers look for. Notebook notes, not interview one-liners.
+            {totalTopics} topics across {systemDesignChapters.length} chapters — estimation, databases,
+            caching, scaling, replication, sharding, queues, Kafka, CAP, consensus, quorums, gossip,
+            Merkle trees, Bloom filters, HyperLogLog, LSM vs B-tree, CDC, OLAP, streaming, newsfeed
+            fan-out, geospatial, CRDTs, HTTP/3, gRPC, Snowflake IDs, video pipelines, double-entry
+            ledgers and ML system design — plus the interview framework, latency numbers, and full
+            worked designs (Twitter, Chat, YouTube, Uber, Dynamo, Dropbox).
           </>
         }
       />
