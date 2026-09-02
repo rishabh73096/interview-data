@@ -70,15 +70,29 @@ const sections: {
   },
   {
     href: '/roadmap',
-    title: 'Full Stack + AI Roadmap',
-    stat: '19 phases',
-    count: 19,
+    title: 'Full Stack AI Roadmap',
+    stat: '62 phases',
+    count: 62,
     description:
-      'A phase-by-phase career track from MERN developer to Full Stack + React Native + AI Application Engineer — web, mobile, backend, cloud, LLMs, RAG and agents, with the projects to build at each stage.',
+      'A phase-by-phase career track from MERN / Next.js developer to Full Stack AI Engineer — advanced web & backend, system design, LLM apps, production RAG, agents and MCP, with career levels and portfolio projects.',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
         <circle cx="12" cy="12" r="3" />
         <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
+      </svg>
+    ),
+  },
+  {
+    href: '/roadmap-mobile',
+    title: 'React Native Roadmap',
+    stat: '41 stages',
+    count: 41,
+    description:
+      'A separate parallel track from your React knowledge to production-level React Native + TypeScript — fundamentals, UI, state, device features, production hardening, just-enough native, both app stores, and 5 projects.',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
+        <rect x="7" y="2" width="10" height="20" rx="2" />
+        <line x1="11" y1="18" x2="13" y2="18" />
       </svg>
     ),
   },
@@ -88,7 +102,7 @@ const statTiles = [
   { label: 'Live components', value: '26' },
   { label: 'Q&A questions', value: '224' },
   { label: 'Coding problems', value: '70' },
-  { label: 'Roadmap phases', value: '19' },
+  { label: 'Roadmap phases', value: '100+' },
 ];
 
 const steps = [
@@ -110,7 +124,7 @@ const steps = [
   {
     n: '04',
     title: 'Level up',
-    description: 'Follow the Full Stack + AI Roadmap to plan what to learn next — mobile, cloud, LLMs, RAG and agents.',
+    description: 'Follow the Full Stack AI and React Native roadmaps to plan what to learn next — cloud, LLMs, RAG, agents and mobile.',
   },
 ];
 

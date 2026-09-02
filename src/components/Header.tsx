@@ -55,6 +55,9 @@ const Header: React.FC = () => {
           <a href="/roadmap" className="transition-colors hover:text-gray-900 dark:hover:text-white">
             Roadmap
           </a>
+          <a href="/roadmap-mobile" className="transition-colors hover:text-gray-900 dark:hover:text-white">
+            Mobile
+          </a>
         </nav>
 
         <a
@@ -146,6 +149,13 @@ const Header: React.FC = () => {
               className="rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-black/5 dark:text-gray-200 dark:hover:bg-white/10"
             >
               Roadmap
+            </a>
+            <a
+              href="/roadmap-mobile"
+              onClick={() => setMenuOpen(false)}
+              className="rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-black/5 dark:text-gray-200 dark:hover:bg-white/10"
+            >
+              Mobile
             </a>
             <a
               href="/components"

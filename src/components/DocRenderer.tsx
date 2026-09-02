@@ -111,7 +111,7 @@ function parseBlocks(content: string): Block[] {
 }
 
 function renderInline(text: string, key: string | number): React.ReactNode {
-  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).filter((p) => p !== '');
+  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`|\[\[[^\]]+\]\])/g).filter((p) => p !== '');
   return (
     <React.Fragment key={key}>
       {parts.map((part, idx) => {
@@ -120,6 +120,19 @@ function renderInline(text: string, key: string | number): React.ReactNode {
             <strong key={idx} className="font-semibold text-gray-900 dark:text-white">
               {part.slice(2, -2)}
             </strong>
+          );
+        }
+        if (part.startsWith('[[') && part.endsWith(']]')) {
+          const inner = part.slice(2, -2);
+          const [target, label] = inner.split('|');
+          return (
+            <a
+              key={idx}
+              href={`#${target.trim()}`}
+              className="font-medium text-orange-700 underline decoration-orange-400/40 underline-offset-2 hover:decoration-orange-500 dark:text-orange-400"
+            >
+              {(label ?? target).trim().replace(/-/g, ' ')}
+            </a>
           );
         }
         if (part.startsWith('`') && part.endsWith('`')) {

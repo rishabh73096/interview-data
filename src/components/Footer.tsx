@@ -12,9 +12,12 @@ const Footer: React.FC = () => {
                 26 hand-built React components — from Counter to Kanban Board — kept as
                 revision material for frontend interview prep.
               </p>
-              <div className="mt-3 flex flex-wrap justify-center gap-x-3 gap-y-1 text-xs font-medium md:justify-start">
+              <div className="mt-3 flex flex-wrap justify-center gap-2 text-xs font-medium md:justify-start">
                 <a href="/roadmap" className="rounded-md bg-white/15 px-3 py-1 transition-colors hover:bg-white/25">
-                  🚀 Full Stack + React Native + AI Roadmap
+                  🚀 Full Stack AI Roadmap
+                </a>
+                <a href="/roadmap-mobile" className="rounded-md bg-white/15 px-3 py-1 transition-colors hover:bg-white/25">
+                  📱 React Native Roadmap
                 </a>
               </div>
             </div>
