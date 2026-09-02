@@ -112,8 +112,9 @@ const SystemDesignPage: React.FC = () => {
         description={
           <>
             {totalTopics} topics across {systemDesignChapters.length} chapters — Requirements, Capacity
-            Estimation, API &amp; Database Design, SQL vs NoSQL, Indexing, Caching and Redis. Written as
-            proper notebook notes, not interview one-liners.
+            Estimation, API &amp; Database Design, SQL vs NoSQL, Indexing, Caching, Redis, Load Balancing,
+            Vertical vs Horizontal Scaling, Replication, Partitioning and Sharding. Written as proper
+            notebook notes, not interview one-liners.
           </>
         }
       />

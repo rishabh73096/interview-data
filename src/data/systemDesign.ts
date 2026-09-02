@@ -93,5 +93,364 @@ export const systemDesignChapters: SDChapter[] = [
         "content": "**Indexing** — fast data lookup. Benefits: faster reads, filtering, sorting. Cost: extra storage, slower writes/updates. Don't index everything — design according to query patterns; use composite indexes for multi-field queries.\n\n**Caching** — frequently used data ko fast temporary storage mein rakhna. Benefits: lower latency, less DB load, higher throughput. Pattern: Request → Cache → HIT (response) / MISS (Database → Cache → response). Watch for: cache invalidation, TTL, hit/miss, stale data, cache stampede.\n\n**Redis** — fast in-memory data store. Uses: cache, sessions, rate limiting, counters, distributed locks, Pub/Sub, temporary data. Data structures: String, Hash, List, Set, Sorted Set.\n\n> Redis ≠ Cache. Redis is a technology that can be used as a cache.\n\nOne line each:\n\n- **Indexing** → database ke andar data ko quickly find karna.\n- **Caching** → frequently used data ko database se pehle fast layer mein rakhna.\n- **Redis** → ek fast in-memory store jo caching ke saath-saath sessions, rate limiting, locks, Pub/Sub etc. ke liye use hota hai.\n"
       }
     ]
+  },
+  {
+    "id": "scaling-load-balancing",
+    "title": "Scaling, Load Balancing & Replication",
+    "topics": [
+      {
+        "id": "load-balancing",
+        "title": "Load Balancing",
+        "content": `> Load Balancer incoming traffic ko multiple servers ke beech distribute karta hai — taaki koi ek server overload na ho.
+
+\`\`\`flow
+Users
+Load Balancer
+Server 1  |  Server 2  |  Server 3
+\`\`\`
+
+Without LB: saare users ek hi server par jaate hain -> overload. With LB: same traffic multiple servers par spread ho jaata hai.
+
+## Why needed
+
+- Traffic distribute karna
+- Single server ko overload hone se bachana
+- High availability — ek server fail ho to baaki serve karte rahein
+- Failed server ko traffic na bhejna (health checks)
+- Horizontal scaling enable karna (naye servers add karke capacity badhao)
+
+## Load balancing algorithms
+
+- **Round Robin** — har request baari-baari agle server ko. Simple, sabse common. (R1->S1, R2->S2, R3->S3, R4->S1...)
+- **Least Connections** — jis server par abhi sabse kam active connections hain, request usko. Uneven request durations ke liye better.
+- **Weighted** — powerful server ko zyada share (S1 weight 1, S2 weight 2, S3 weight 3).
+- **IP Hash** — client IP se server decide (same client -> same server).
+
+## Health checks
+
+Load balancer periodically har server ko ping karta hai:
+
+\`\`\`flow
+Server 1 -> Healthy
+Server 2 -> Healthy
+Server 3 -> Failed (yahan traffic nahi bhejega)
+\`\`\`
+
+Unhealthy server ko traffic milna band, healthy hote hi wapas shuru.
+
+## Sticky sessions
+
+Kabhi user ko baar-baar same server par bhejna padta hai (session us server ki memory mein hai).
+
+\`\`\`flow
+User A -> Server 1 (aur Server 1 par hi bandha rehta hai)
+\`\`\`
+
+Problem: Server 1 gira to session gaya, aur load uneven ho jaata hai.
+
+> Better: session state ko shared store (Redis) ya stateless JWT mein rakho — phir koi bhi server request handle kar sakta hai.
+
+## LB kahan baithta hai
+
+- **L4 (transport)** — IP/port ke basis par route. Fast, content nahi dekhta.
+- **L7 (application)** — URL / headers / cookies dekhkar route (e.g. \`/api\` -> API servers, \`/img\` -> image servers).
+`
+      },
+      {
+        "id": "vertical-vs-horizontal-scaling",
+        "title": "Vertical vs Horizontal Scaling",
+        "content": `> Do tareeke system ki capacity badhane ke: server ko bada karo (vertical), ya aur servers add karo (horizontal).
+
+## Vertical scaling (scale up)
+
+Same server ko powerful banao: 4 CPU / 16 GB RAM  ->  32 CPU / 128 GB RAM.
+
+- **Plus:** simple, koi app change nahi, shuru mein easy
+- **Minus:** hardware ki ek limit hai; top-end hardware ka price non-linear (bahut mehenga); aur ye single point of failure hai — wo ek machine gir gayi to sab down
+
+## Horizontal scaling (scale out)
+
+Aur servers add karo; load balancer traffic baant deta hai.
+
+\`\`\`flow
+Server 1  ->  Server 1 + Server 2 + Server 3 + Server 4
+\`\`\`
+
+- **Plus:** practically unlimited scale, fault tolerant (ek gira to baaki chal rahe), capacity badhana easy
+- **Minus:** app ko **stateless** rakhna padta hai
+
+## Stateless kyun zaroori hai
+
+\`\`\`flow
+Request 1 -> Server 1 (session Server 1 ki memory mein)
+Request 2 -> Server 2 -> session missing!
+\`\`\`
+
+Fix: state ko servers se bahar nikaalo —
+
+\`\`\`flow
+Server 1 / Server 2 / Server 3  ->  Redis (shared session)
+\`\`\`
+
+...ya JWT / access-token based stateless auth.
+
+## Practical order
+
+Pehle vertical scaling se kaam chala lo (simple). Jaise growth badhe, horizontal par jao — kyunki long-term scale **aur** availability wahi deta hai.
+
+| | Vertical | Horizontal |
+| --- | --- | --- |
+| Kaise | Bigger machine | More machines |
+| Limit | Hardware ceiling | Practically none |
+| Failure | Single point | Fault tolerant |
+| App changes | Almost none | Must be stateless |
+`
+      },
+      {
+        "id": "database-replication",
+        "title": "Database Replication",
+        "content": `> App servers to multiple ho gaye, but database abhi bhi ek hai — wo naya bottleneck aur single point of failure ban jaata hai.
+
+\`\`\`flow
+Load Balancer -> Server 1 / Server 2 / Server 3 -> ONE Database
+\`\`\`
+
+**Replication** = database ki multiple copies maintain karna.
+
+\`\`\`flow
+Primary DB
+Replica 1  |  Replica 2
+\`\`\`
+
+## Primary vs Replica
+
+- **Primary** (master / leader) — saare **writes** yahan: INSERT / UPDATE / DELETE
+- **Replicas** (read replicas) — **reads** yahan se: SELECT
+
+\`\`\`flow
+Application
+Writes -> Primary
+Reads  -> Replica 1 / Replica 2 / Replica 3
+\`\`\`
+
+## Read scaling
+
+Maan lo 100,000 req/sec — 90% read, 10% write. Saare reads primary par bhejoge to primary overload. Reads ko replicas mein baant do -> primary sirf writes handle karta hai, aur read capacity naye replicas add karke badhti hai.
+
+## Benefits
+
+- **Read scalability** — jitne zyada replicas, utni zyada read capacity
+- **High availability** — primary fail ho to ek replica ko promote karke naya primary bana do (failover)
+- **Disaster recovery** — data ki multiple copies, data-loss risk kam
+
+## Replication lag
+
+Primary par write hua (\`balance = 500\`), replica ko wo update thodi der baad milta hai (abhi bhi \`balance = 1000\`). Is gap ko **replication lag** kehte hain.
+
+> Write karke turant usi data ko replica se read karoge to **stale (purana) data** mil sakta hai. Critical flows (payment balance, abhi kiya hua change) ke liye wo read primary se karo — isko "read your own writes" kehte hain.
+
+## Synchronous vs Asynchronous
+
+- **Synchronous** — primary write tab "done" bolta hai jab replica bhi confirm kare. Consistency achhi, latency zyada.
+- **Asynchronous** — primary turant response de deta hai, replicas baad mein update hote hain. Latency kam, thoda replication lag possible. (Most systems ka default.)
+`
+      },
+      {
+        "id": "scaling-connection",
+        "title": "How These Connect",
+        "content": `> Teeno milkar "ek server" se "many servers + high availability" tak ka rasta banate hain.
+
+\`\`\`diagram
+                    Users
+                      |
+                Load Balancer
+                 /     |     \\
+              Server  Server  Server
+                 \\     |     /
+                  Database Primary
+                   /          \\
+              Replica        Replica
+\`\`\`
+
+- **Load Balancer** -> traffic ko application servers ke beech baantta hai, failed servers ko skip karta hai.
+- **Horizontal scaling** -> wo multiple application servers deta hai (stateless hone chahiye).
+- **Replication** -> database ko read scaling + failover deta hai (primary = writes, replicas = reads).
+
+Ek line mein: **LB app tier ko scale karta hai; replication data tier ko scale + protect karta hai.**
+`
+      }
+    ]
+  },
+  {
+    "id": "partitioning-sharding",
+    "title": "Partitioning, Sharding & Replication vs Sharding",
+    "topics": [
+      {
+        "id": "database-partitioning",
+        "title": "Database Partitioning",
+        "content": `> Partitioning = ek bade table / dataset ko chhote logical tukdon (partitions) mein baant dena — usually ek hi database ke andar.
+
+\`\`\`flow
+Bookings table (100M rows)
+Partition 2024  |  Partition 2025  |  Partition 2026
+\`\`\`
+
+Query poore table ko scan karne ke bajaye sirf relevant partition ko touch karti hai.
+
+## Why
+
+- Bada data manage karna aasaan
+- Queries efficient (kam data scan)
+- Maintenance easy — purana data (e.g. 2019 partition) alag drop / archive kar sakte ho
+- Chhote indexes -> faster lookups
+
+## Types
+
+- **Range partitioning** — kisi range ke hisaab se: 2024 -> P1, 2025 -> P2. Achha for dates, IDs, age.
+- **Hash partitioning** — \`hash(userId) % N\` se partition choose. Data evenly spread karne ke liye.
+- **List partitioning** — specific values: India -> P1, USA -> P2, UK -> P3.
+
+## Note
+
+Partitioning ke 2 flavours: **horizontal** (rows baantna — most common) aur **vertical** (kam use hone waale columns alag table mein).
+`
+      },
+      {
+        "id": "database-sharding",
+        "title": "Database Sharding",
+        "content": `> Sharding = database ke data ko multiple **independent database servers** (shards) par distribute karna. Har shard apne hisse ka poora database hai.
+
+\`\`\`flow
+Users (100M)
+Shard 1 (DB server 1)  |  Shard 2 (DB server 2)  |  Shard 3 (DB server 3)
+\`\`\`
+
+Ab poora data ek machine par nahi — storage aur write load bhi baant gaya.
+
+## Why
+
+Ek machine par 100 TB data + millions of writes/sec eventually bottleneck. Sharding se:
+
+\`\`\`flow
+Application
+Shard Router (decides which shard)
+Shard 1  |  Shard 2  |  Shard 3
+\`\`\`
+
+## Shard key
+
+Wo field jiske basis par decide hota hai data kis shard mein jaayega — e.g. \`userId\`, \`tenantId\`, \`region\`.
+
+\`\`\`flow
+userId -> hash -> shard
+User 101 -> Shard 1
+User 202 -> Shard 2
+User 303 -> Shard 3
+\`\`\`
+
+## Bad shard key -> hotspot
+
+Agar key aisi ho ki zyaadatar traffic ek shard par gir jaaye:
+
+\`\`\`flow
+Shard 1 -> 90% traffic (hot shard!)
+Shard 2 -> 5%
+Shard 3 -> 5%
+\`\`\`
+
+...to sharding ka fayda hi khatam. **Good shard key**: data + traffic dono evenly baante, aur common queries usi key par ho (taaki cross-shard na jaana pade).
+
+## Sharding vs Partitioning
+
+- **Partitioning** — ek DB ke andar data ko logical parts mein todna.
+- **Sharding** — data ko multiple alag DB servers par baantna ("partitioning across machines").
+
+## Problems (isliye sharding last resort hai)
+
+- Cross-shard joins / queries hard
+- Cross-shard transactions hard
+- Data rebalancing (naya shard add karne par data move karna)
+- Shard key galat chuna to fix karna painful
+- Zyada operational complexity
+
+> Order: achha schema -> indexes -> caching -> read replicas -> partitioning -> **phir** sharding.
+`
+      },
+      {
+        "id": "replication-vs-sharding",
+        "title": "Replication vs Sharding",
+        "content": `> Ek line: **Replication = same data ki copies. Sharding = alag-alag data alag machines par.**
+
+## Replication
+
+\`\`\`flow
+Primary
+Replica 1  |  Replica 2   (same data, copied)
+\`\`\`
+
+Purpose: **high availability + read scaling + redundancy**. Har node ke paas poora dataset hai.
+
+## Sharding
+
+\`\`\`flow
+Shard 1 -> Users A-D
+Shard 2 -> Users E-M
+Shard 3 -> Users N-Z
+\`\`\`
+
+Purpose: **storage scaling + write scaling + data distribution**. Kisi ek node ke paas poora data nahi.
+
+| | Replication | Sharding |
+| --- | --- | --- |
+| Data | Same copy everywhere | Different slice per node |
+| Solves | Reads, availability, redundancy | Writes, storage, size |
+| Complexity | Lower | Higher |
+| Query | Any node has the answer | Router must find the right shard |
+
+## Dono saath mein (real production)
+
+\`\`\`diagram
+              Application
+                   |
+              Shard Router
+           /       |       \\
+       Shard 1   Shard 2   Shard 3
+        /  \\      /  \\      /  \\
+      Rep Rep   Rep Rep   Rep Rep
+\`\`\`
+
+Sharding data ko baantta hai; har shard ki replication uski availability + read scaling deti hai. Isko **distributed database architecture** kehte hain.
+
+## Real-world flow (1 billion users)
+
+\`\`\`flow
+Single DB -> overload
+Add: indexes + cache + read replicas
+Still huge write / size -> shard it
+Each shard -> apne replicas
+\`\`\`
+`
+      },
+      {
+        "id": "partitioning-sharding-recap",
+        "title": "Quick Recap",
+        "content": `**Partitioning** — bade data ko logical parts mein todna (Range / Hash / List), ek DB ke andar. Benefit: manageable data, efficient queries, easy maintenance.
+
+**Sharding** — data ko multiple DB servers par baantna. Shard key decide karti hai kaunsa data kahan. Good key = even data + even traffic + matches queries. Problems: cross-shard joins/transactions, rebalancing, hotspots, complexity — isliye pehle schema / index / cache / replica try karo.
+
+**Replication vs Sharding**
+
+- Replication -> **same data, multiple copies** -> availability, read scaling, redundancy.
+- Sharding -> **different data, different servers** -> write scaling, storage scaling, distribution.
+- Bade systems: sharding + replication = distributed database.
+
+One line each:
+
+- **Replication** -> same data ki copies (availability + reads).
+- **Sharding** -> alag data ko alag machines par (writes + storage).
+- **Partitioning** -> bade data ko logical parts mein divide karna.
+`
+      }
+    ]
   }
 ];

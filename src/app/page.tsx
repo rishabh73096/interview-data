@@ -42,10 +42,10 @@ const sections: {
   {
     href: '/system-design',
     title: 'System Design Notebook',
-    stat: '13 topics · 3 chapters',
-    count: 13,
+    stat: '21 topics · 5 chapters',
+    count: 21,
     description:
-      'Proper notebook-style notes, not one-liners — Requirements, Capacity Estimation, API & Database Design, SQL vs NoSQL, Indexing, Caching and Redis, with diagrams where they help more than words.',
+      'Proper notebook-style notes, not one-liners — Requirements, Capacity Estimation, API & Database Design, SQL vs NoSQL, Indexing, Caching, Redis, Load Balancing, Scaling, Replication, Partitioning and Sharding, with diagrams where they help more than words.',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
         <polygon points="12 2 2 7 12 12 22 7 12 2" />
