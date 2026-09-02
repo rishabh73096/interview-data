@@ -5,6 +5,7 @@ import { qaCategories } from '../../data/interviewQA';
 import CodeBlock from '../../components/CodeBlock';
 import PageHero from '../../components/PageHero';
 import CategoryNav from '../../components/CategoryNav';
+import QASidebar from '../../components/QASidebar';
 
 const slugify = (title: string) =>
   title
@@ -33,6 +34,12 @@ const InterviewQAPage: React.FC = () => {
   }, [normalizedQuery]);
 
   const totalShown = filtered.reduce((sum, cat) => sum + cat.items.length, 0);
+
+  const navCategories = filtered.map((cat) => ({
+    id: slugify(cat.title),
+    title: cat.title,
+    count: cat.items.length,
+  }));
 
   return (
     <main className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 sm:pb-24">
@@ -64,16 +71,21 @@ const InterviewQAPage: React.FC = () => {
         </div>
       </PageHero>
 
-      <CategoryNav
-        categories={qaCategories.map((cat) => ({
-          id: slugify(cat.title),
-          title: cat.title,
-          count: cat.items.length,
-        }))}
-      />
+      <div className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-10">
+        {/* Mobile / tablet: horizontal scrollable nav */}
+        <div className="lg:hidden">
+          <CategoryNav categories={navCategories} />
+        </div>
 
-      <div className="flex flex-col gap-10 sm:gap-14">
-        {filtered.map((cat) => (
+        {/* Desktop: sticky left topic bar */}
+        <aside className="hidden lg:block">
+          <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto pr-2">
+            <QASidebar categories={navCategories} />
+          </div>
+        </aside>
+
+        <div className="flex flex-col gap-10 sm:gap-14">
+          {filtered.map((cat) => (
           <section key={cat.title} id={slugify(cat.title)} className="scroll-mt-24">
             <h2 className="mb-4 flex items-center gap-3 text-lg font-semibold text-gray-900 sm:mb-5 sm:text-xl dark:text-white">
               <span className="h-2 w-2 shrink-0 rounded-full bg-linear-to-r from-orange-600 to-yellow-400" />
@@ -97,11 +109,12 @@ const InterviewQAPage: React.FC = () => {
           </section>
         ))}
 
-        {filtered.length === 0 && (
-          <p className="py-12 text-center text-gray-500 dark:text-gray-400">
-            No questions match your search.
-          </p>
-        )}
+          {filtered.length === 0 && (
+            <p className="py-12 text-center text-gray-500 dark:text-gray-400">
+              No questions match your search.
+            </p>
+          )}
+        </div>
       </div>
     </main>
   );
