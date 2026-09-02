@@ -5,7 +5,7 @@ import { codingQuestionCategories } from '../../data/codingQuestions';
 import PageHero from '../../components/PageHero';
 import CategoryNav from '../../components/CategoryNav';
 import NumberBadge from '../../components/NumberBadge';
-import CodeRunner from '../../components/CodeRunner';
+import PracticeDrawer, { PracticeQuestion } from '../../components/PracticeDrawer';
 
 const slugify = (title: string) =>
   title
@@ -21,17 +21,8 @@ const solvedCount = codingQuestionCategories.reduce(
 
 const CodingQuestionsClient: React.FC = () => {
   const [query, setQuery] = useState('');
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [active, setActive] = useState<PracticeQuestion | null>(null);
   const normalizedQuery = query.trim().toLowerCase();
-
-  const toggle = (key: string) => {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  };
 
   const filtered = useMemo(() => {
     if (!normalizedQuery) return codingQuestionCategories;
@@ -49,13 +40,14 @@ const CodingQuestionsClient: React.FC = () => {
     <main className="mx-auto max-w-5xl px-4 pb-24 sm:px-6">
       <PageHero
         eyebrow="Coding Practice"
-        title="Array, String &"
-        accent="Object Questions"
+        title="Machine-Coding &"
+        accent="JS Utility Problems"
         description={
           <>
-            {totalQuestions} hand-picked coding problems across arrays, strings and objects — the exact
-            kind that show up in machine-coding interview rounds. {solvedCount} of {totalQuestions} have
-            a runnable solution — click a question to open it, edit the code, and hit Run.
+            {totalQuestions} hand-picked problems — arrays, strings, objects, and the practical
+            JavaScript utilities a full-stack developer with 3&ndash;4 years&apos; experience is expected to
+            write on the spot. {solvedCount} have a runnable solution — click a question to open it in a
+            side editor with autocomplete, edit the code, and hit Run.
           </>
         }
       >
@@ -96,36 +88,30 @@ const CodingQuestionsClient: React.FC = () => {
             <div className="overflow-hidden rounded-xl border border-[#6b5836]/12 bg-[#f0e7d6]/55 shadow-sm dark:border-white/10 dark:bg-[#a9885d]/8">
               {cat.items.map((item, idx) => {
                 const key = `${cat.title}-${idx}`;
-                const isOpen = expanded.has(key);
                 return (
-                  <div key={key} className="border-b border-black/5 last:border-0 dark:border-white/5">
-                    <button
-                      onClick={() => item.code && toggle(key)}
-                      disabled={!item.code}
-                      className={`flex w-full items-start gap-3 px-4 py-3.5 text-left sm:px-5 ${
-                        item.code ? 'cursor-pointer hover:bg-black/2 dark:hover:bg-white/3' : 'cursor-default'
-                      }`}
-                    >
-                      <NumberBadge n={idx + 1} size="sm" />
-                      <p className="flex-1 text-sm leading-relaxed text-gray-700 dark:text-gray-300">{item.q}</p>
-                      {item.code ? (
-                        <span
-                          className={`shrink-0 text-xs text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                        >
-                          ⌄
-                        </span>
-                      ) : (
-                        <span className="hidden shrink-0 rounded-full bg-black/5 px-2.5 py-1 text-[11px] font-medium whitespace-nowrap text-gray-500 sm:inline-block dark:bg-white/10 dark:text-gray-400">
-                          Solution soon
-                        </span>
-                      )}
-                    </button>
-                    {item.code && isOpen && (
-                      <div className="px-4 pb-4 sm:px-5">
-                        <CodeRunner initialCode={item.code} />
-                      </div>
+                  <button
+                    key={key}
+                    onClick={() =>
+                      item.code &&
+                      setActive({ q: item.q, code: item.code, category: cat.title, n: idx + 1 })
+                    }
+                    disabled={!item.code}
+                    className={`group flex w-full items-center gap-3 border-b border-black/5 px-4 py-3.5 text-left last:border-0 sm:px-5 dark:border-white/5 ${
+                      item.code ? 'cursor-pointer hover:bg-black/2 dark:hover:bg-white/3' : 'cursor-default'
+                    }`}
+                  >
+                    <NumberBadge n={idx + 1} size="sm" />
+                    <p className="flex-1 text-sm leading-relaxed text-gray-700 dark:text-gray-300">{item.q}</p>
+                    {item.code ? (
+                      <span className="shrink-0 text-xs font-medium text-gray-400 transition-colors group-hover:text-[#96703f] dark:group-hover:text-[#c9a877]">
+                        Open&nbsp;→
+                      </span>
+                    ) : (
+                      <span className="hidden shrink-0 rounded-full bg-black/5 px-2.5 py-1 text-[11px] font-medium whitespace-nowrap text-gray-500 sm:inline-block dark:bg-white/10 dark:text-gray-400">
+                        Solution soon
+                      </span>
                     )}
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -136,6 +122,8 @@ const CodingQuestionsClient: React.FC = () => {
           <p className="py-12 text-center text-gray-500 dark:text-gray-400">No questions match your search.</p>
         )}
       </div>
+
+      <PracticeDrawer question={active} onClose={() => setActive(null)} />
     </main>
   );
 };

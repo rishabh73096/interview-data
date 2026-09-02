@@ -57,10 +57,10 @@ const sections: {
   {
     href: '/coding-questions',
     title: 'Coding Practice',
-    stat: '70 problems',
-    count: 70,
+    stat: '112 problems',
+    count: 112,
     description:
-      'Array, string and object problems from real machine-coding rounds, each with an editable, runnable solution — tweak the input and hit Run to see the output update live.',
+      'Arrays, strings, objects, async/Promise patterns, real-world utilities (debounce, deep clone, memoize) and machine-coding tasks (LRU cache, EventEmitter, Trie). Click one to open a VS-Code-style editor with autocomplete on the right, edit, and Run.',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
         <polyline points="4 17 10 11 4 5" />
@@ -101,7 +101,7 @@ const sections: {
 const statTiles = [
   { label: 'Live components', value: '26' },
   { label: 'Q&A questions', value: '224' },
-  { label: 'Coding problems', value: '70' },
+  { label: 'Coding problems', value: '112' },
   { label: 'Roadmap phases', value: '100+' },
 ];
 
