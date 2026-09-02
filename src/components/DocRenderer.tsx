@@ -148,7 +148,7 @@ const FlowChart: React.FC<{ steps: string[] }> = ({ steps }) => (
   <div className="mb-5 flex flex-col items-center gap-0 rounded-lg border border-orange-900/8 bg-orange-500/4 py-5 dark:border-orange-400/10 dark:bg-orange-400/4">
     {steps.map((step, idx) => (
       <React.Fragment key={idx}>
-        <div className="rounded-lg border border-orange-500/30 bg-orange-50/80 px-4 py-2 text-center text-sm font-medium text-gray-800 shadow-sm dark:bg-[#1c140c] dark:text-gray-100">
+        <div className="rounded-lg border border-orange-500/30 bg-orange-50/80 px-4 py-2 text-center text-sm font-medium text-gray-800 shadow-sm dark:bg-[#20201c] dark:text-gray-100">
           {renderInline(step, idx)}
         </div>
         {idx < steps.length - 1 && (

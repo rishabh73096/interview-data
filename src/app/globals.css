@@ -8,8 +8,8 @@
 }
 
 html.dark {
-  --background: #140d08;
-  --foreground: #fbe8d8;
+  --background: #14120f;
+  --foreground: #f4ece2;
 }
 
 /* keep simple CSS for the vars; Tailwind utilities are available too */

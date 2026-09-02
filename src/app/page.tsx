@@ -27,10 +27,10 @@ const sections: {
   {
     href: '/interview-qa',
     title: 'Quick Interview Q&A',
-    stat: '162 questions',
-    count: 162,
+    stat: '224 questions',
+    count: 224,
     description:
-      'Short, 1–2 line answers across JavaScript, React, Node, databases and system design — with runnable code examples for the ones that need them. Built for a fast pass before an interview.',
+      'Short, 1–2 line answers across JavaScript, React, Node, databases, system design, Git, TypeScript and more — with runnable code examples for the ones that need them. Built for a fast pass before an interview.',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
         <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -68,13 +68,27 @@ const sections: {
       </svg>
     ),
   },
+  {
+    href: '/roadmap',
+    title: 'Full Stack + AI Roadmap',
+    stat: '19 phases',
+    count: 19,
+    description:
+      'A phase-by-phase career track from MERN developer to Full Stack + React Native + AI Application Engineer — web, mobile, backend, cloud, LLMs, RAG and agents, with the projects to build at each stage.',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
+        <circle cx="12" cy="12" r="3" />
+        <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
+      </svg>
+    ),
+  },
 ];
 
 const statTiles = [
   { label: 'Live components', value: '26' },
-  { label: 'Q&A questions', value: '162' },
+  { label: 'Q&A questions', value: '224' },
   { label: 'Coding problems', value: '70' },
-  { label: 'System design topics', value: '13' },
+  { label: 'Roadmap phases', value: '19' },
 ];
 
 const steps = [
@@ -93,6 +107,11 @@ const steps = [
     title: 'Practice',
     description: 'Solve the Coding Practice problems in the live editor — edit, run, and see the output instantly.',
   },
+  {
+    n: '04',
+    title: 'Level up',
+    description: 'Follow the Full Stack + AI Roadmap to plan what to learn next — mobile, cloud, LLMs, RAG and agents.',
+  },
 ];
 
 const maxCount = Math.max(...sections.map((s) => s.count));
@@ -101,14 +120,15 @@ const HomePage: React.FC = () => {
   return (
     <main className="mx-auto max-w-6xl px-4 sm:px-6">
       <PageHero
-        eyebrow="Frontend Interview Prep"
-        title="Everything you need to"
-        accent="prep for your next interview"
+        eyebrow="Full Stack Developer · Interview Prep"
+        title="Everything a full stack developer needs to"
+        accent="prep for the next interview"
         description={
           <>
             One place instead of six open tabs: live React components to study and reuse, a fast
-            revision sheet of Q&amp;A, proper system design notes, and runnable coding-round practice —
-            all built from scratch, all in one hub.
+            revision sheet of 224+ Q&amp;A across JavaScript, React, Node, databases, system design and
+            Git, proper system design notes, runnable coding-round practice, and a full stack + AI
+            career roadmap — all built from scratch, all in one hub.
           </>
         }
       />
@@ -195,9 +215,9 @@ const HomePage: React.FC = () => {
           How to use this hub
         </h2>
         <p className="mx-auto mb-8 max-w-xl text-center text-sm text-gray-600 sm:text-base dark:text-gray-300">
-          Three sections, one order that actually works for interview prep.
+          Four steps, one order that actually works — from revision to your next skill.
         </p>
-        <div className="grid grid-cols-1 gap-4 sm:gap-0 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:gap-0 sm:grid-cols-2 md:grid-cols-4">
           {steps.map((step, idx) => (
             <div key={step.n} className="relative flex flex-col items-center gap-3 px-4 text-center">
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-orange-600 via-amber-500 to-yellow-400 text-sm font-bold text-white shadow-sm">
