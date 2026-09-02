@@ -42,7 +42,7 @@ const InterviewQAPage: React.FC = () => {
   }));
 
   return (
-    <main className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 sm:pb-24">
+    <main className="mx-auto max-w-7xl md:px-0 px-4 pb-16 sm:px-6 sm:pb-24">
       <PageHero
         eyebrow="Fast Revision"
         title="Quick Interview"
