@@ -44,7 +44,6 @@ const RoadmapView: React.FC<RoadmapViewProps> = ({
 }) => {
   const [activeId, setActiveId] = useState<string>(chapters[0].phases[0].id);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [showGoTop, setShowGoTop] = useState(false);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
@@ -65,16 +64,10 @@ const RoadmapView: React.FC<RoadmapViewProps> = ({
 
     headings.forEach((el) => observerRef.current?.observe(el));
 
-    const handleScroll = () => setShowGoTop(window.scrollY > 600);
-    window.addEventListener('scroll', handleScroll, { passive: true });
-
     return () => {
       observerRef.current?.disconnect();
-      window.removeEventListener('scroll', handleScroll);
     };
   }, []);
-
-  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
   const SidebarLinks: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) => (
     <div className="flex flex-col gap-5">
@@ -183,16 +176,6 @@ const RoadmapView: React.FC<RoadmapViewProps> = ({
           ))}
         </div>
       </div>
-
-      <button
-        onClick={scrollToTop}
-        aria-label="Go to top"
-        className={`fixed right-4 bottom-6 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-linear-to-br from-[#93764f] via-[#a98c62] to-[#c7ad82] text-white shadow-lg transition-all duration-200 sm:right-8 sm:bottom-8 ${
-          showGoTop ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0'
-        }`}
-      >
-        ↑
-      </button>
     </main>
   );
 };

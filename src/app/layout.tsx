@@ -4,6 +4,7 @@ import './globals.css';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import RelatedLinks from '../components/RelatedLinks';
+import ScrollButtons from '../components/ScrollButtons';
 
 export const metadata: Metadata = {
   title: {
@@ -42,6 +43,7 @@ const RootLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         {children}
         <RelatedLinks />
         <Footer />
+        <ScrollButtons />
       </body>
     </html>
   );
