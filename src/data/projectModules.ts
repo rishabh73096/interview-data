@@ -50,6 +50,10 @@ Har module yahan ek fixed shape mein samjhaya hai:
         duration: 'Every project',
         content: `> User ki identity verify karna — "tum kaun ho?" Signup, login, logout, "remember me", social login.
 
+## Explain it in 30 seconds
+
+> Authentication is confirming who the user is. On login I verify the email and password (hashed with argon2), then issue two tokens — a short access token (~15 min) and a longer refresh token that rotates on every use. Both live in httpOnly, Secure cookies so XSS can't read them. If an old refresh token is replayed, I treat it as stolen and revoke that user's whole token family.
+
 ## Data model
 
 - \`users(id, email UNIQUE, password_hash, name, email_verified, status, created_at)\`
@@ -86,6 +90,10 @@ Logout: revoke refresh token + clear cookie
         title: 'Authorization & Role-Based Access (RBAC)',
         duration: 'Every project',
         content: `> "Tum ye kar sakte ho?" — authenticated hone ke baad **permission** check. Admin / Manager / Staff / Customer jaise roles.
+
+## Explain it in 30 seconds
+
+> Authorization comes after authentication — does this user have permission for this action. Each user has one or more roles, and each role has permissions. A middleware on the route checks the permission, and the handler also checks ownership and tenant ("is this order in the user's org?"). The key point: this is always enforced on the server — hiding a button on the frontend is not security.
 
 ## Data model
 
@@ -139,6 +147,10 @@ UI: hide buttons the user can't use (but server still enforces)
         duration: 'Every project',
         content: `> Profile view/edit, avatar, change email, change password, delete account, preferences.
 
+## Explain it in 30 seconds
+
+> Here the user edits their details, avatar, email and password, or deletes their account. Changing email sends a confirmation link to the new address — only then does it switch, and I notify the old address too. The avatar goes to S3 via a presigned URL, with EXIF stripped. On account delete I clear not just the DB row but uploaded files, the search index and logs (GDPR/DPDP).
+
 ## Data model
 
 - \`users\` (core auth fields) + \`profiles(user_id, avatar_key, bio, phone, timezone, locale, prefs jsonb)\`
@@ -173,6 +185,10 @@ Delete account: soft-delete (status = deleted) or hard-delete + anonymize; queue
         title: 'Password Reset, Email Verification & OTP',
         duration: 'Every project',
         content: `> "Forgot password", "verify your email", "enter the 6-digit code". Sabme same core: a short-lived, single-use secret.
+
+## Explain it in 30 seconds
+
+> Reset, email verification and OTP all share one core: a short-lived, single-use secret. For reset I generate a random token, store its **hash** (not the raw value), email the raw token in a link that expires in ~30 minutes and dies after one use. OTP lives in Redis with a 5-minute TTL, counts attempts, and locks after ~5 wrong tries. And "forgot password" returns the same response whether the email exists or not, to prevent user enumeration.
 
 ## Data model
 
@@ -216,6 +232,10 @@ Verify: check code hash -> increment attempts -> lock after ~5 wrong -> on succe
         duration: 'SaaS · Fintech · Admin',
         content: `> "Kisne, kya, kab kiya" — immutable record of sensitive actions. Compliance, debugging, "who deleted this?".
 
+## Explain it in 30 seconds
+
+> The audit log is an append-only table where every sensitive action is recorded — who did it, what, when, and the before/after values. It's immutable; no updates or deletes. Writes happen asynchronously via a queue so they never slow the request. This answers "who deleted this record" instantly and is required for compliance. In fintech we hash-chain the entries to make them tamper-evident.
+
 ## Data model
 
 \`\`\`flow
@@ -257,6 +277,10 @@ Append-only. No update/delete on this table.
         duration: 'E-commerce · Marketplace',
         content: `> Add to cart, update quantity, apply coupon, checkout. The cart must survive refreshes, logout, and price changes.
 
+## Explain it in 30 seconds
+
+> A guest's cart lives in Redis and merges into the user's cart on login. At checkout I **re-price everything**, because price or stock can change after items were added — and I show the user if anything changed. Placing an order reserves stock with a short hold, confirmed on payment success and released on abandon. "Place order" is idempotent so a double-click doesn't create two orders.
+
 ## Data model
 
 - Guest cart: Redis \`cart:{sessionId}\` (TTL ~7-30 days) or client localStorage
@@ -293,6 +317,10 @@ Payment webhook succeeds -> order PAID -> confirm stock decrement -> clear cart
         title: 'Payment Integration (Stripe / Razorpay)',
         duration: 'E-commerce · SaaS · Booking',
         content: `> Charge the customer, confirm server-side, never double-charge, always reconcilable. (Full depth: System Design → Payments.)
+
+## Explain it in 30 seconds
+
+> On the backend I create the order as PENDING and a PaymentIntent at the provider (Stripe/Razorpay) with an idempotency key. The client pays the provider directly — 3D Secure / OTP happens there. The source of truth is the provider's **signed webhook**; that's what marks the order PAID, not the client's response. The webhook handler is idempotent by event id, and a daily reconciliation job compares our records against the provider to fix any missed webhooks.
 
 ## Data model
 
@@ -331,6 +359,10 @@ Payment webhook succeeds -> order PAID -> confirm stock decrement -> clear cart
         duration: 'SaaS',
         content: `> Recurring plans, upgrades/downgrades, trials, proration, invoices, dunning.
 
+## Explain it in 30 seconds
+
+> I let Stripe Billing own all the recurring logic — renewals, proration, retries, tax — and I just react to webhooks. "Entitlements" — what a tenant can do right now — are derived from the subscription status plus the plan, cached, and recomputed on each webhook. When a card fails I don't cut access instantly; there's a past-due grace window with dunning emails, then a downgrade or cancel.
+
 ## Data model
 
 - \`plans(id, name, price, interval, features jsonb)\`
@@ -367,6 +399,10 @@ Cancel -> cancel_at_period_end (keep access till paid period ends)
         title: 'Coupons & Discounts',
         duration: 'E-commerce · SaaS',
         content: `> Promo codes, percentage/fixed discounts, first-order, minimum cart, usage limits, stacking rules.
+
+## Explain it in 30 seconds
+
+> When a code is applied I validate it — active, within its date range, cart meets the minimum, the user is under their per-user limit, and the global usage limit still has room. The discount amount is **always computed on the server**; the client value is display only. The usage-limit race is handled with an atomic increment / insert-on-conflict, otherwise under load you go over the limit. On a refund the proportional discount is reversed.
 
 ## Data model
 
@@ -405,6 +441,10 @@ On order placed -> insert coupon_redemption (atomic check of usage_limit)
         title: 'Rewards & Loyalty Engine',
         duration: 'E-commerce · Fintech · Consumer',
         content: `> Earn points/cashback on actions (purchase, referral, review), redeem for discounts/credit. A "formula builder" so each business configures its own rules.
+
+## Explain it in 30 seconds
+
+> The rewards module is ledger-based — no mutable balance column. Every transaction is an append-only entry (+delta to earn, -delta to redeem), and the balance is the sum of entries. Each business configures its own rule in the DB — fixed or percentage, with a cap, via a formula-builder UI. Points are credited **when payment is confirmed** (not at order creation) and deduped by order id. On a refund or chargeback a negative entry claws them back.
 
 ## Data model
 
@@ -447,6 +487,10 @@ Expiry -> a job appends -delta entries for expired points
         title: 'Referral Program',
         duration: 'Consumer · SaaS growth',
         content: `> "Invite a friend, both get Rs 100." Referral codes/links, attribution, reward on a qualifying event, fraud checks.
+
+## Explain it in 30 seconds
+
+> Every user has a referral code; a visitor's code is stored in a cookie or attached at signup. The reward isn't given **at signup** but on a real qualifying event — like the first paid order or 14-day retention — to both sides, once each. Self-referral and fake accounts are blocked with device/payment fingerprinting and velocity checks (one referrer, 50 signups in an hour).
 
 ## Data model
 
@@ -492,6 +536,10 @@ Referee does the QUALIFYING action (first paid order / stays 14 days) -> status=
         duration: 'Booking · Healthcare · Salon',
         content: `> Pick a service + staff + time slot, book it, reschedule, cancel. The whole game is **no double-booking**.
 
+## Explain it in 30 seconds
+
+> Available slots are computed on the fly — working hours minus existing bookings minus time off minus lead time — in the customer's timezone. To book, I rely on a **unique constraint** on (staff, slot) or an atomic check-and-set; never "SELECT then INSERT", or two requests both succeed. A slow payer gets a short Redis hold on the slot. Reschedule is an atomic cancel + rebook, and the admin calendar stays in sync in real time.
+
 ## Data model
 
 \`\`\`flow
@@ -535,6 +583,10 @@ Reschedule = cancel + rebook atomically. Cancel -> free the slot, maybe refund.
         duration: 'Dashboards · Booking · Collab',
         content: `> One user changes something -> other users/screens update within a second, without refresh. Live dashboards, presence, "new booking" on the admin calendar.
 
+## Explain it in 30 seconds
+
+> The client opens a WebSocket, authenticates, and joins a room (org / board / conversation). On a state change the server publishes an event to that room. With multiple server instances you need a Redis pub/sub backplane, otherwise an event on server A never reaches users connected to server B. On reconnect the client sends its "last event id" and missed events are replayed. If it's only server-to-client, SSE is simpler.
+
 ## Flow
 
 \`\`\`flow
@@ -565,6 +617,10 @@ Reconnect -> send "last event id" -> server replays what was missed
         title: 'Chat / Messaging',
         duration: 'Marketplace · Support · Social',
         content: `> 1:1 and group messages, delivered fast and reliably, in order, with receipts and offline push. (Full walkthrough: System Design → Worked Designs.)
+
+## Explain it in 30 seconds
+
+> Every message gets a per-conversation monotonic sequence number — that's what gives ordering. The client attaches a clientMsgId so a retry doesn't create a duplicate. Delivery has states — sent, delivered, read. An offline user gets a push notification, and on reconnect the client syncs everything after its last-seen sequence number.
 
 ## Data model
 
@@ -603,6 +659,10 @@ Open chat / reconnect: fetch messages after my last-seen seq
         title: 'Notifications (In-App + Email + Push)',
         duration: 'Every project',
         content: `> "You have a new message", "your order shipped", reminders. Multi-channel, per-user preferences, retries, no spam.
+
+## Explain it in 30 seconds
+
+> When something happens, an event is emitted, and a notification service decides which channels — in-app, email, push — based on the user's preferences and quiet hours. Each channel is a separate queued job with retries and a dead-letter queue. If someone gets 10 likes in 5 minutes they get one digest notification, not 10 pushes. Push tokens are deleted on logout and when the provider reports them invalid.
 
 ## Data model
 
@@ -650,6 +710,10 @@ In-app: client subscribes (WebSocket/SSE) for the live badge + a paginated feed
         duration: 'Every project',
         content: `> Avatars, documents, product images, attachments. Files never touch your app server's disk.
 
+## Explain it in 30 seconds
+
+> On upload the backend only issues a presigned S3 URL — the file never passes through Node. The client PUTs directly to S3, then tells the backend the key. The backend sniffs the real content type, caps the size, re-encodes images and strips EXIF. Private files are served through a CDN using short-lived signed URLs.
+
 ## Flow
 
 \`\`\`flow
@@ -681,6 +745,10 @@ Serve: private files via short-lived signed URLs through a CDN; public via CDN d
         title: 'Search & Filtering',
         duration: 'E-commerce · Marketplace · Admin',
         content: `> Keyword search + facet filters (brand, price, rating) + sort + pagination. DB \`LIKE\` doesn't scale.
+
+## Explain it in 30 seconds
+
+> For small data, SQL plus proper indexes is enough; for a real search experience I use Elasticsearch. The DB stays the source of truth and the search index is derived, kept in sync via events or CDC. A query does keyword matching plus facet filters plus relevance, and returns facet counts. I avoid \`LIKE '%term%'\` because the leading \`%\` can't use an index and forces a full scan.
 
 ## Approaches
 
@@ -716,6 +784,10 @@ Query -> search API -> engine: keyword match (analyzed) + filter (facets) + sort
         title: 'Comments, Reviews & Ratings',
         duration: 'E-commerce · Social · Content',
         content: `> Threaded comments, star ratings, "verified purchase", helpful votes, moderation.
+
+## Explain it in 30 seconds
+
+> Comments are threaded via a parent_id, and a user can leave only one review per product (a unique constraint). I don't compute the average rating on every request — I keep a denormalized summary that's updated whenever a review changes. Spam is auto-flagged by keywords, links and rate, then goes to a moderation queue.
 
 ## Data model
 
@@ -756,6 +828,10 @@ Helpful vote -> upsert; unique per user
         duration: 'SaaS · Admin · CRM',
         content: `> "Upload a CSV of 50,000 products", "export all orders". Long-running, must not block the request or lose rows.
 
+## Explain it in 30 seconds
+
+> A large CSV upload is a background job, not an HTTP request. I stream the file row by row so memory doesn't blow up. Valid rows are processed and invalid ones go into an error report with row numbers — the whole file doesn't fail because of row 4,001. The upsert is idempotent on an external id, so re-uploading the same file doesn't create duplicates.
+
 ## Flow — import
 
 \`\`\`flow
@@ -794,6 +870,10 @@ Request export -> create export_job -> worker queries in pages -> streams rows t
         duration: 'Every project',
         content: `> List 10,000 rows without loading all of them. Page numbers, "load more", infinite scroll.
 
+## Explain it in 30 seconds
+
+> For feeds and infinite scroll I use cursor pagination — \`WHERE created_at < lastSeen\` — which is O(log n) with an index and stable when data changes. For admin tables that need page numbers, offset is fine on small datasets. The sort key must be unique (created_at plus id), otherwise rows get skipped or repeated. Total counts are expensive on big tables, so I approximate or drop them.
+
 ## Offset vs cursor
 
 - **Offset** (\`LIMIT 20 OFFSET 200\`) — simple, "jump to page 50", but slow on deep pages (DB walks + discards all skipped rows) and shows **duplicates/gaps** if data changes between pages.
@@ -830,6 +910,10 @@ Admin table with page numbers -> offset (small datasets) or cursor + a separate 
         duration: 'B2B SaaS',
         content: `> One app, many isolated customers (orgs/workspaces). Every row belongs to a tenant; no tenant ever sees another's data.
 
+## Explain it in 30 seconds
+
+> I use the shared-schema approach — every table has a tenant_id and every query filters on it. One missed WHERE is a cross-tenant leak, so I enforce it centrally in a repository layer or with Postgres Row-Level Security as a backstop. Unique constraints are per-tenant — UNIQUE(tenant_id, email), not UNIQUE(email). A user can belong to multiple orgs, and the "current tenant" lives in the session.
+
 ## Models
 
 - **Shared schema + \`tenant_id\` column** (most common) — one DB, every table has \`tenant_id\`, every query filters by it. Cheap, easy to run; isolation is enforced in code.
@@ -865,6 +949,10 @@ Users <-> tenants is many-to-many: memberships(user_id, tenant_id, role)
         duration: 'Every project',
         content: `> The back office: manage users, orders, content; run support actions; see metrics. Powerful, so dangerous.
 
+## Explain it in 30 seconds
+
+> The admin panel has its own auth and roles, separate from customer roles. Every action is high blast-radius — refund, delete, plan change — so each one has a confirmation, a permission check and an audit entry with before/after. Impersonation ("view as user") shows a banner, is time-boxed and audited, and the actions are attributed to the admin. Bulk actions run as a background job with a progress report.
+
 ## What it needs
 
 - **Its own auth + roles** (admin, support, finance, read-only) — separate from customer roles.
@@ -892,6 +980,10 @@ Users <-> tenants is many-to-many: memberships(user_id, tenant_id, role)
         title: 'Feature Flags & Config',
         duration: 'SaaS · Any team',
         content: `> Turn features on/off at runtime — per environment, per tenant, per user %, without a deploy. Kill switches, gradual rollouts, A/B tests, plan gating.
+
+## Explain it in 30 seconds
+
+> Feature flags turn features on and off at runtime without a deploy — percentage rollout, per-tenant, kill switch. Bucketing is stable — hash(userId + flagKey) % 100 — so a user doesn't flip on every request. Deploy and release become separate steps, and rollback is just flipping the flag. If the flag service is down, the code falls back to a safe default, usually off for new features.
 
 ## Data model / source
 
@@ -931,6 +1023,10 @@ Evaluate rules top-down: tenant override -> user in beta list -> % rollout (stab
         duration: 'SaaS · E-commerce · Admin',
         content: `> Dashboards, revenue reports, funnels, "orders per day". Heavy aggregate reads that must not slow the app DB.
 
+## Explain it in 30 seconds
+
+> Analytics queries never run against the app's transactional DB — a GROUP BY scanning millions of rows would lock up checkout. At small scale I use rollup tables like daily_metrics; at larger scale a warehouse like ClickHouse or BigQuery fed by CDC. Rollup jobs are idempotent so a re-run doesn't double-count. The numbers are eventually consistent, and each tenant sees only their own.
+
 ## Approaches (by scale)
 
 - **Small** — aggregate queries on the OLTP DB (\`GROUP BY date\`), cached, maybe a read replica.
@@ -965,6 +1061,10 @@ Export -> background job -> CSV in S3 (Ch: Import/Export)
         title: 'Rate Limiting & Abuse Protection',
         duration: 'Every public API',
         content: `> Stop one client (or an attacker) from overwhelming the system or running up your costs.
+
+## Explain it in 30 seconds
+
+> Rate limiting happens at several layers — per IP, per user or API key, and per route, with stricter limits on login, OTP and AI endpoints. The counter lives in shared Redis; a per-instance counter would allow N times the real limit. The check and increment are atomic (a Lua script or INCR), otherwise two requests both pass. For AI and export endpoints I also add a daily spend cap, not just requests per minute.
 
 ## Layers
 
@@ -1006,6 +1106,10 @@ Request -> rate limiter (before auth for IP limits, after for user limits)
         title: 'Webhooks (In/Out) & Background Jobs',
         duration: 'SaaS · Integrations',
         content: `> **Receiving** webhooks (Stripe, GitHub) and **sending** webhooks to customers' endpoints. Plus the queue that powers most async work.
+
+## Explain it in 30 seconds
+
+> For an incoming webhook I verify the signature on the raw body, dedupe by event id, then enqueue and return 200 immediately — the heavy work happens in a worker. For an outgoing webhook I POST to the customer's URL with an HMAC signature, retry with exponential backoff on failure, then move it to a dead-letter queue and alert the customer. I allowlist customer URLs against private IPs to prevent SSRF. Job payloads stay small — an id, never a blob.
 
 ## Incoming webhooks
 
