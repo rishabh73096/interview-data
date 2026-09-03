@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import RelatedLinks from '../components/RelatedLinks';
 
 export const metadata: Metadata = {
   title: {
@@ -39,6 +40,7 @@ const RootLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <body>
         <Header />
         {children}
+        <RelatedLinks />
         <Footer />
       </body>
     </html>

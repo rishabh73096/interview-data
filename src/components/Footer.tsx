@@ -25,6 +25,12 @@ const Footer: React.FC = () => {
                 >
                   📱 React Native Roadmap
                 </a>
+                <a
+                  href="/project-modules"
+                  className="rounded-md bg-black/6 px-3 py-1 text-gray-700 transition-colors hover:bg-black/10 dark:bg-white/10 dark:text-gray-200 dark:hover:bg-white/15"
+                >
+                  🧩 Project Modules Explained
+                </a>
               </div>
             </div>
 
