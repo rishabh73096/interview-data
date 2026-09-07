@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+import GlobalSearch from './GlobalSearch';
 
 const Header: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -66,6 +67,8 @@ const Header: React.FC = () => {
         >
           26 Components
         </a>
+
+        <GlobalSearch />
 
         <button
           onClick={toggleTheme}

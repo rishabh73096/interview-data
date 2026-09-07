@@ -6,12 +6,7 @@ import CodeBlock from '../../components/CodeBlock';
 import PageHero from '../../components/PageHero';
 import CategoryNav from '../../components/CategoryNav';
 import QASidebar from '../../components/QASidebar';
-
-const slugify = (title: string) =>
-  title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
+import { slugify, anchorFromText } from '../../lib/anchor';
 
 const totalQuestions = qaCategories.reduce((sum, cat) => sum + cat.items.length, 0);
 
@@ -96,7 +91,8 @@ const InterviewQAPage: React.FC = () => {
               {cat.items.map((item, idx) => (
                 <div
                   key={`${cat.title}-${idx}`}
-                  className={`rounded-xl border border-[#6b5836]/12 bg-[#f0e7d6]/55 p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5 dark:border-white/10 dark:bg-[#a9885d]/8 ${
+                  id={anchorFromText(item.q)}
+                  className={`scroll-mt-24 rounded-xl border border-[#6b5836]/12 bg-[#f0e7d6]/55 p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5 dark:border-white/10 dark:bg-[#a9885d]/8 ${
                     item.code ? 'md:col-span-2' : ''
                   }`}
                 >

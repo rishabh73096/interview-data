@@ -1,17 +1,12 @@
 "use client";
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { codingQuestionCategories } from '../../data/codingQuestions';
 import PageHero from '../../components/PageHero';
 import CategoryNav from '../../components/CategoryNav';
 import NumberBadge from '../../components/NumberBadge';
 import PracticeDrawer, { PracticeQuestion } from '../../components/PracticeDrawer';
-
-const slugify = (title: string) =>
-  title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
+import { slugify, anchorFromText } from '../../lib/anchor';
 
 const totalQuestions = codingQuestionCategories.reduce((sum, cat) => sum + cat.items.length, 0);
 const solvedCount = codingQuestionCategories.reduce(
@@ -35,6 +30,23 @@ const CodingQuestionsClient: React.FC = () => {
   }, [normalizedQuery]);
 
   const totalShown = filtered.reduce((sum, cat) => sum + cat.items.length, 0);
+
+  // Arriving from global search (/coding-questions#q-...) — open that problem.
+  useEffect(() => {
+    const hash = decodeURIComponent(window.location.hash.replace('#', ''));
+    if (!hash) return;
+    for (const cat of codingQuestionCategories) {
+      const idx = cat.items.findIndex((item) => anchorFromText(item.q) === hash);
+      if (idx !== -1) {
+        const item = cat.items[idx];
+        if (item.code) {
+          setActive({ q: item.q, code: item.code, category: cat.title, n: idx + 1 });
+        }
+        document.getElementById(hash)?.scrollIntoView({ block: 'center' });
+        break;
+      }
+    }
+  }, []);
 
   return (
     <main className="mx-auto max-w-5xl px-4 pb-24 sm:px-6">
@@ -91,12 +103,13 @@ const CodingQuestionsClient: React.FC = () => {
                 return (
                   <button
                     key={key}
+                    id={anchorFromText(item.q)}
                     onClick={() =>
                       item.code &&
                       setActive({ q: item.q, code: item.code, category: cat.title, n: idx + 1 })
                     }
                     disabled={!item.code}
-                    className={`group flex w-full items-center gap-3 border-b border-black/5 px-4 py-3.5 text-left last:border-0 sm:px-5 dark:border-white/5 ${
+                    className={`group flex w-full scroll-mt-24 items-center gap-3 border-b border-black/5 px-4 py-3.5 text-left last:border-0 sm:px-5 dark:border-white/5 ${
                       item.code ? 'cursor-pointer hover:bg-black/2 dark:hover:bg-white/3' : 'cursor-default'
                     }`}
                   >

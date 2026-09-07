@@ -4,12 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { hrCategories } from '../../data/hrQuestions';
 import PageHero from '../../components/PageHero';
 import CategoryNav from '../../components/CategoryNav';
-
-const slugify = (title: string) =>
-  title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
+import { slugify, anchorFromText } from '../../lib/anchor';
 
 const totalQuestions = hrCategories.reduce((sum, cat) => sum + cat.items.length, 0);
 
@@ -94,7 +89,8 @@ const HRQuestionsClient: React.FC = () => {
                 {cat.items.map((item, idx) => (
                   <div
                     key={idx}
-                    className={`rounded-xl border p-5 shadow-sm sm:p-6 ${
+                    id={anchorFromText(item.q)}
+                    className={`scroll-mt-24 rounded-xl border p-5 shadow-sm sm:p-6 ${
                       isSelfIntro
                         ? 'border-[#9a7b53]/35 bg-linear-to-br from-[#efe6d4] to-[#e7dbc3]/60 dark:border-white/12 dark:from-white/8 dark:to-white/4'
                         : 'border-[#6b5836]/12 bg-[#f0e7d6]/55 dark:border-white/10 dark:bg-[#a9885d]/8'
