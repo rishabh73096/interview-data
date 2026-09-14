@@ -31,19 +31,19 @@ const RelatedLinks: React.FC = () => {
 
   return (
     <section className="mx-auto max-w-7xl px-4 pb-4 sm:px-6">
-      <div className="rounded-xl border border-[#6b5836]/12 bg-[#f0e7d6]/55 p-5 sm:p-6 dark:border-white/10 dark:bg-[#a9885d]/8">
+      <div className="rounded-xl border border-[#9a3412]/12 bg-[#f0e7d6]/55 p-5 sm:p-6 dark:border-white/10 dark:bg-[#f97316]/8">
         <p className="mb-4 text-sm font-semibold text-gray-900 dark:text-white">You may also like</p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {links.map((link) => (
             <a
               key={link.href}
               href={link.href}
-              className="group flex flex-col gap-1 rounded-lg border border-[#6b5836]/10 bg-white/40 p-3.5 transition-all hover:-translate-y-0.5 hover:border-[#a9885d]/40 hover:shadow-sm dark:border-white/8 dark:bg-white/5"
+              className="group flex flex-col gap-1 rounded-lg border border-[#9a3412]/10 bg-white/40 p-3.5 transition-all hover:-translate-y-0.5 hover:border-[#f97316]/40 hover:shadow-sm dark:border-white/8 dark:bg-white/5"
             >
               <span className="text-lg leading-none">{link.emoji}</span>
               <span className="mt-1 flex items-center gap-1 text-sm font-medium text-gray-900 dark:text-white">
                 {link.title}
-                <span className="text-gray-400 transition-transform group-hover:translate-x-0.5 group-hover:text-[#96703f] dark:group-hover:text-[#c9a877]">
+                <span className="text-gray-400 transition-transform group-hover:translate-x-0.5 group-hover:text-[#c2410c] dark:group-hover:text-[#fdba74]">
                   →
                 </span>
               </span>

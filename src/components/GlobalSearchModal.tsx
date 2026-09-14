@@ -108,7 +108,7 @@ const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 z-[80] bg-[#f4ecdd]/95 backdrop-blur-md dark:bg-[#141210]/95"
+      className="fixed inset-0 z-[80] bg-[#f4ecdd] dark:bg-[#141210]"
       role="dialog"
       aria-modal="true"
       aria-label="Search everything"
@@ -116,7 +116,7 @@ const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ onClose }) => {
     >
       <div className="mx-auto flex h-full max-w-2xl flex-col px-4 pt-4 pb-6 sm:pt-12">
         <div className="flex items-center gap-2">
-          <div className="flex flex-1 items-center gap-3 rounded-xl border border-[#6b5836]/20 bg-[#f0e7d6]/70 px-4 py-3 shadow-sm focus-within:border-[#a9885d] dark:border-white/12 dark:bg-white/5">
+          <div className="flex flex-1 items-center gap-3 rounded-xl border border-[#9a3412]/20 bg-[#f0e7d6]/70 px-4 py-3 shadow-sm focus-within:border-[#f97316] dark:border-white/12 dark:bg-white/5">
             <svg
               width="18"
               height="18"
@@ -186,11 +186,11 @@ const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ onClose }) => {
                       onMouseMove={() => setActiveIndex(flatIndex)}
                       className={`flex w-full items-start gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors ${
                         isActive
-                          ? 'border-[#a9885d]/50 bg-[#9a7b53]/12 dark:border-white/15 dark:bg-white/8'
+                          ? 'border-[#f97316]/50 bg-[#ea580c]/12 dark:border-white/15 dark:bg-white/8'
                           : 'border-transparent hover:bg-black/3 dark:hover:bg-white/4'
                       }`}
                     >
-                      <span className="mt-0.5 flex h-6 min-w-6 shrink-0 items-center justify-center rounded-md bg-linear-to-br from-[#93764f] via-[#a98c62] to-[#c7ad82] px-1 font-mono text-[10px] font-bold text-white">
+                      <span className="mt-0.5 flex h-6 min-w-6 shrink-0 items-center justify-center rounded-md bg-linear-to-br from-[#c2410c] via-[#ea580c] to-[#fb923c] px-1 font-mono text-[10px] font-bold text-white">
                         {GROUP_BADGE[item.group]}
                       </span>
                       <span className="min-w-0 flex-1">

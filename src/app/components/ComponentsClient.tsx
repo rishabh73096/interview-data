@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import Accordion from '../../components/interview/Accordion';
 import ApiFetch from '../../components/interview/ApiFetch';
@@ -71,6 +71,8 @@ const components = componentsMeta.map((meta) => ({
 
 const ComponentsClient: React.FC = () => {
   const [activeCode, setActiveCode] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
+  const normalizedQuery = query.trim().toLowerCase();
 
   // Arriving from global search (/components#comp-Name) — open that source.
   useEffect(() => {
@@ -80,6 +82,14 @@ const ComponentsClient: React.FC = () => {
       if (componentSource[name]) setActiveCode(name);
     }
   }, []);
+
+  const filtered = useMemo(() => {
+    if (!normalizedQuery) return components;
+    return components.filter(
+      ({ name, description }) =>
+        name.toLowerCase().includes(normalizedQuery) || description.toLowerCase().includes(normalizedQuery)
+    );
+  }, [normalizedQuery]);
 
   return (
     <main className="mx-auto max-w-7xl px-4 sm:px-6">
@@ -94,15 +104,31 @@ const ComponentsClient: React.FC = () => {
             board. Every one is live below, built and rendered from scratch.
           </>
         }
-      />
+      >
+        <div className="mt-4 w-full max-w-xl">
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search a component…"
+            inputMode="search"
+            className="w-full rounded-full border border-[#9a3412]/12 bg-[#f0e7d6]/55 px-5 py-3 text-sm shadow-sm outline-none transition-colors focus:border-[#f97316] dark:border-white/10 dark:bg-white/5 dark:text-white"
+          />
+          {normalizedQuery && (
+            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              {filtered.length} of {components.length} components match &ldquo;{query}&rdquo;
+            </p>
+          )}
+        </div>
+      </PageHero>
 
       <section className="pb-16 sm:pb-24">
         <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
-          {components.map(({ name, description, Component }, index) => (
+          {filtered.map(({ name, description, Component }, index) => (
             <div
               key={name}
               id={`comp-${name}`}
-              className="scroll-mt-24 rounded-xl border border-[#6b5836]/12 bg-[#f0e7d6]/55 p-4 shadow-sm transition-shadow hover:shadow-md sm:p-6 dark:border-white/10 dark:bg-[#a9885d]/8"
+              className="scroll-mt-24 rounded-xl border border-[#9a3412]/12 bg-[#f0e7d6]/55 p-4 shadow-sm transition-shadow hover:shadow-md sm:p-6 dark:border-white/10 dark:bg-[#f97316]/8"
             >
               <div className="mb-4 flex items-start justify-between gap-2 sm:gap-3">
                 <div className="flex min-w-0 items-start gap-2.5 sm:gap-3">
@@ -115,7 +141,7 @@ const ComponentsClient: React.FC = () => {
                 <button
                   onClick={() => setActiveCode(name)}
                   aria-label={`View ${name} source code`}
-                  className="flex shrink-0 items-center gap-1.5 rounded-full border border-black/10 px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-[#a9885d] hover:text-[#96703f] active:bg-black/5 sm:px-3 dark:border-white/10 dark:text-gray-300 dark:hover:text-[#cdb083] dark:active:bg-white/10"
+                  className="flex shrink-0 items-center gap-1.5 rounded-full border border-black/10 px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-[#f97316] hover:text-[#c2410c] active:bg-black/5 sm:px-3 dark:border-white/10 dark:text-gray-300 dark:hover:text-[#fdba74] dark:active:bg-white/10"
                 >
                   <span className="font-mono">{'</>'}</span>
                   <span className="hidden sm:inline">View Code</span>
@@ -127,6 +153,10 @@ const ComponentsClient: React.FC = () => {
             </div>
           ))}
         </div>
+
+        {filtered.length === 0 && (
+          <p className="py-12 text-center text-gray-500 dark:text-gray-400">No components match your search.</p>
+        )}
       </section>
 
       <CodeDrawer

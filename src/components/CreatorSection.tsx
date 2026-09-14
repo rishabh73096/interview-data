@@ -3,16 +3,16 @@ import React from 'react';
 const CreatorSection: React.FC = () => {
   return (
     <section className="pb-14 sm:pb-20">
-      <div className="relative overflow-hidden rounded-2xl border border-[#6b5836]/14 bg-linear-to-br from-[#9a7b53]/8 via-[#c1a67d]/6 to-transparent p-6 sm:p-10 dark:border-white/12 dark:bg-[#a9885d]/8">
+      <div className="relative overflow-hidden rounded-2xl border border-[#9a3412]/14 bg-linear-to-br from-[#ea580c]/8 via-[#fb923c]/6 to-transparent p-6 sm:p-10 dark:border-white/12 dark:bg-[#f97316]/8">
         {/* Ambient background accent */}
-        <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[#9a7b53]/14 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-[#c9b48f]/14 blur-3xl" />
+        <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[#ea580c]/14 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-[#fb923c]/14 blur-3xl" />
 
         <div className="relative z-10">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#9a7b53]/25 bg-[#9a7b53]/14 px-3.5 py-1 text-xs font-semibold text-[#96703f] dark:text-[#cdb083]">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#ea580c]/25 bg-[#ea580c]/14 px-3.5 py-1 text-xs font-semibold text-[#c2410c] dark:text-[#fdba74]">
             <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#a9885d] opacity-75"></span>
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#a9885d]"></span>
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#f97316] opacity-75"></span>
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#f97316]"></span>
             </span>
             Meet the Creator
           </div>
@@ -22,11 +22,11 @@ const CreatorSection: React.FC = () => {
             <div className="lg:col-span-7">
               <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl dark:text-white">
                 Built &amp; Maintained by{' '}
-                <span className="bg-linear-to-r from-[#93764f] via-[#a98c62] to-[#c7ad82] bg-clip-text text-transparent">
+                <span className="bg-linear-to-r from-[#c2410c] via-[#ea580c] to-[#fb923c] bg-clip-text text-transparent">
                   Rishabh Tiwari
                 </span>
               </h2>
-              <p className="mt-2 text-sm font-medium text-[#96703f] dark:text-[#cdb083]">
+              <p className="mt-2 text-sm font-medium text-[#c2410c] dark:text-[#fdba74]">
                 Full Stack Developer | MERN &amp; Next.js Specialist | SaaS Architect
               </p>
 
@@ -56,7 +56,7 @@ const CreatorSection: React.FC = () => {
                   href="https://rishabh-portfolio1-ten.vercel.app/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-[#93764f] via-[#a98c62] to-[#c7ad82] px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:scale-[1.02] hover:shadow-lg active:scale-95"
+                  className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-[#c2410c] via-[#ea580c] to-[#fb923c] px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:scale-[1.02] hover:shadow-lg active:scale-95"
                 >
                   Visit Full Portfolio
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -116,7 +116,7 @@ const CreatorSection: React.FC = () => {
 
               <div className="rounded-xl border border-black/5 bg-white/70 p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
                 <div className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white">
-                  <span className="flex h-2 w-2 rounded-full bg-[#b8935f]"></span>
+                  <span className="flex h-2 w-2 rounded-full bg-[#f97316]"></span>
                   Forma Construction B2B
                 </div>
                 <p className="mt-1 text-xs text-gray-600 dark:text-gray-300">
@@ -131,7 +131,7 @@ const CreatorSection: React.FC = () => {
                   {['React.js', 'Next.js', 'Node.js', 'Express', 'MongoDB', 'PostgreSQL', 'Redis', 'Docker', 'Tailwind CSS', 'TypeScript', 'Stripe', 'JWT / RBAC'].map((tech) => (
                     <span
                       key={tech}
-                      className="rounded-md border border-[#9a7b53]/25 bg-[#9a7b53]/14 px-2.5 py-1 text-[#7f5f37] dark:border-white/12 dark:bg-[#c9b48f]/12 dark:text-[#d8bf94]"
+                      className="rounded-md border border-[#ea580c]/25 bg-[#ea580c]/14 px-2.5 py-1 text-[#c2410c] dark:border-white/12 dark:bg-[#fb923c]/12 dark:text-[#fdba74]"
                     >
                       {tech}
                     </span>

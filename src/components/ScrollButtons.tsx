@@ -32,7 +32,7 @@ const ScrollButtons: React.FC = () => {
     window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
 
   const btn =
-    'flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-br from-[#93764f] via-[#a98c62] to-[#c7ad82] text-white shadow-lg ring-1 ring-black/10 transition-all duration-200 hover:scale-110 active:scale-95 sm:h-11 sm:w-11';
+    'flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-br from-[#c2410c] via-[#ea580c] to-[#fb923c] text-white shadow-lg ring-1 ring-black/10 transition-all duration-200 hover:scale-110 active:scale-95 sm:h-11 sm:w-11';
 
   return (
     <div className="fixed right-4 bottom-6 z-40 flex flex-col gap-2 sm:right-6 sm:bottom-8">

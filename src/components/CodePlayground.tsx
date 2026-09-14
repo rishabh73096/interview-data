@@ -132,7 +132,7 @@ const CodePlayground: React.FC<CodePlaygroundProps> = ({ initialCode, className 
           </button>
           <button
             onClick={run}
-            className="rounded-md bg-linear-to-r from-[#93764f] via-[#a98c62] to-[#c7ad82] px-3 py-1 text-xs font-semibold text-white shadow-sm transition-transform hover:scale-105"
+            className="rounded-md bg-linear-to-r from-[#c2410c] via-[#ea580c] to-[#fb923c] px-3 py-1 text-xs font-semibold text-white shadow-sm transition-transform hover:scale-105"
           >
             ▶ Run
           </button>

@@ -1,15 +1,19 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from 'react';
-import { systemDesignChapters } from '../../data/systemDesign';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { systemDesignChapters, type SDChapter } from '../../data/systemDesign';
 import DocRenderer from '../../components/DocRenderer';
 import PageHero from '../../components/PageHero';
 
 const totalTopics = systemDesignChapters.reduce((sum, ch) => sum + ch.topics.length, 0);
 
-const SidebarLinks: React.FC<{ activeId: string; onNavigate?: () => void }> = ({ activeId, onNavigate }) => (
+const SidebarLinks: React.FC<{ chapters: SDChapter[]; activeId: string; onNavigate?: () => void }> = ({
+  chapters,
+  activeId,
+  onNavigate,
+}) => (
   <div className="flex flex-col gap-5">
-    {systemDesignChapters.map((chapter, chIdx) => (
+    {chapters.map((chapter, chIdx) => (
       <div key={chapter.id}>
         <p className="mb-2 px-3 text-[11px] font-semibold tracking-wide text-gray-400 uppercase dark:text-gray-500">
           {String(chIdx + 1).padStart(2, '0')} · {chapter.title}
@@ -22,7 +26,7 @@ const SidebarLinks: React.FC<{ activeId: string; onNavigate?: () => void }> = ({
               onClick={onNavigate}
               className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${
                 activeId === topic.id
-                  ? 'bg-[#9a7b53]/14 font-medium text-[#7f5f37] dark:text-[#cdb083]'
+                  ? 'bg-[#ea580c]/14 font-medium text-[#c2410c] dark:text-[#fdba74]'
                   : 'text-gray-600 hover:bg-black/5 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white'
               }`}
             >
@@ -39,7 +43,7 @@ const SidebarLinks: React.FC<{ activeId: string; onNavigate?: () => void }> = ({
         onClick={onNavigate}
         className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-black/5 dark:text-gray-200 dark:hover:bg-white/10"
       >
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-linear-to-br from-[#93764f] via-[#a98c62] to-[#c7ad82] text-[10px] font-bold text-white">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-linear-to-br from-[#c2410c] via-[#ea580c] to-[#fb923c] text-[10px] font-bold text-white">
           C
         </span>
         Live Components
@@ -49,7 +53,7 @@ const SidebarLinks: React.FC<{ activeId: string; onNavigate?: () => void }> = ({
         onClick={onNavigate}
         className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-black/5 dark:text-gray-200 dark:hover:bg-white/10"
       >
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-linear-to-br from-[#93764f] via-[#a98c62] to-[#c7ad82] text-[10px] font-bold text-white">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-linear-to-br from-[#c2410c] via-[#ea580c] to-[#fb923c] text-[10px] font-bold text-white">
           Q
         </span>
         Quick Interview Q&amp;A
@@ -59,7 +63,7 @@ const SidebarLinks: React.FC<{ activeId: string; onNavigate?: () => void }> = ({
         onClick={onNavigate}
         className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-black/5 dark:text-gray-200 dark:hover:bg-white/10"
       >
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-linear-to-br from-[#93764f] via-[#a98c62] to-[#c7ad82] text-[10px] font-bold text-white">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-linear-to-br from-[#c2410c] via-[#ea580c] to-[#fb923c] text-[10px] font-bold text-white">
           {'</>'}
         </span>
         Coding Practice
@@ -71,7 +75,25 @@ const SidebarLinks: React.FC<{ activeId: string; onNavigate?: () => void }> = ({
 const SystemDesignPage: React.FC = () => {
   const [activeId, setActiveId] = useState<string>(systemDesignChapters[0].topics[0].id);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [query, setQuery] = useState('');
   const observerRef = useRef<IntersectionObserver | null>(null);
+  const normalizedQuery = query.trim().toLowerCase();
+
+  const filteredChapters = useMemo(() => {
+    if (!normalizedQuery) return systemDesignChapters;
+    return systemDesignChapters
+      .map((chapter) => ({
+        ...chapter,
+        topics: chapter.topics.filter(
+          (topic) =>
+            topic.title.toLowerCase().includes(normalizedQuery) ||
+            topic.content.toLowerCase().includes(normalizedQuery)
+        ),
+      }))
+      .filter((chapter) => chapter.topics.length > 0);
+  }, [normalizedQuery]);
+
+  const totalShown = filteredChapters.reduce((sum, ch) => sum + ch.topics.length, 0);
 
   useEffect(() => {
     const headings = Array.from(document.querySelectorAll<HTMLElement>('[data-topic-id]'));
@@ -112,20 +134,36 @@ const SystemDesignPage: React.FC = () => {
             worked designs (Twitter, Chat, YouTube, Uber, Dynamo, Dropbox).
           </>
         }
-      />
+      >
+        <div className="mt-4 w-full max-w-xl">
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search a topic or keyword…"
+            inputMode="search"
+            className="w-full rounded-full border border-[#9a3412]/12 bg-[#f0e7d6]/55 px-5 py-3 text-sm shadow-sm outline-none transition-colors focus:border-[#f97316] dark:border-white/10 dark:bg-white/5 dark:text-white"
+          />
+          {normalizedQuery && (
+            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              {totalShown} of {totalTopics} topics match &ldquo;{query}&rdquo;
+            </p>
+          )}
+        </div>
+      </PageHero>
 
       {/* mobile contents toggle */}
       <div className="mb-4 lg:hidden">
         <button
           onClick={() => setMobileNavOpen((o) => !o)}
-          className="flex w-full items-center justify-between rounded-lg border border-[#6b5836]/12 bg-[#f0e7d6]/55 px-4 py-3 text-sm font-medium text-gray-700 shadow-sm dark:border-white/10 dark:bg-[#a9885d]/8 dark:text-gray-200"
+          className="flex w-full items-center justify-between rounded-lg border border-[#9a3412]/12 bg-[#f0e7d6]/55 px-4 py-3 text-sm font-medium text-gray-700 shadow-sm dark:border-white/10 dark:bg-[#f97316]/8 dark:text-gray-200"
         >
           Contents
           <span className={`transition-transform ${mobileNavOpen ? 'rotate-180' : ''}`}>⌄</span>
         </button>
         {mobileNavOpen && (
-          <div className="mt-2 max-h-[60vh] overflow-y-auto rounded-lg border border-[#6b5836]/12 bg-[#f0e7d6]/55 p-3 shadow-sm dark:border-white/10 dark:bg-[#a9885d]/8">
-            <SidebarLinks activeId={activeId} onNavigate={() => setMobileNavOpen(false)} />
+          <div className="mt-2 max-h-[60vh] overflow-y-auto rounded-lg border border-[#9a3412]/12 bg-[#f0e7d6]/55 p-3 shadow-sm dark:border-white/10 dark:bg-[#f97316]/8">
+            <SidebarLinks chapters={filteredChapters} activeId={activeId} onNavigate={() => setMobileNavOpen(false)} />
           </div>
         )}
       </div>
@@ -133,15 +171,19 @@ const SystemDesignPage: React.FC = () => {
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[240px_1fr] lg:gap-10">
         <aside className="hidden lg:block">
           <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto pr-2">
-            <SidebarLinks activeId={activeId} />
+            <SidebarLinks chapters={filteredChapters} activeId={activeId} />
           </div>
         </aside>
 
         <div className="min-w-0">
-          {systemDesignChapters.map((chapter, chIdx) => (
+          {filteredChapters.length === 0 && (
+            <p className="py-12 text-center text-gray-500 dark:text-gray-400">No topics match your search.</p>
+          )}
+
+          {filteredChapters.map((chapter, chIdx) => (
             <div key={chapter.id} className="mb-10 min-w-0">
               <div className="mb-5 flex items-center gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-[#93764f] via-[#a98c62] to-[#c7ad82] text-sm font-bold text-white">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-[#c2410c] via-[#ea580c] to-[#fb923c] text-sm font-bold text-white">
                   {String(chIdx + 1).padStart(2, '0')}
                 </span>
                 <h2 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-white">{chapter.title}</h2>
@@ -153,7 +195,7 @@ const SystemDesignPage: React.FC = () => {
                     key={topic.id}
                     id={topic.id}
                     data-topic-id={topic.id}
-                    className="min-w-0 scroll-mt-24 rounded-xl border border-[#6b5836]/12 bg-[#f0e7d6]/55 p-5 shadow-sm sm:p-7 dark:border-white/10 dark:bg-[#a9885d]/8"
+                    className="min-w-0 scroll-mt-24 rounded-xl border border-[#9a3412]/12 bg-[#f0e7d6]/55 p-5 shadow-sm sm:p-7 dark:border-white/10 dark:bg-[#f97316]/8"
                   >
                     <h3 className="mb-4 text-lg font-semibold text-gray-900 sm:text-xl dark:text-white">
                       {topic.title}

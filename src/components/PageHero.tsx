@@ -11,12 +11,12 @@ interface PageHeroProps {
 
 const PageHero: React.FC<PageHeroProps> = ({ eyebrow, title, accent, description, cta, children }) => (
   <section className="flex flex-col items-center gap-3 py-7 text-center sm:gap-4 sm:py-10">
-    <span className="rounded-full border border-[#9a7b53]/25 bg-[#9a7b53]/12 px-4 py-1 text-xs font-medium tracking-wide text-[#6f5230] uppercase dark:border-white/12 dark:bg-[#c9b48f]/12 dark:text-[#d8bf94]">
+    <span className="rounded-full border border-[#ea580c]/25 bg-[#ea580c]/12 px-4 py-1 text-xs font-medium tracking-wide text-[#9a3412] uppercase dark:border-white/12 dark:bg-[#fb923c]/12 dark:text-[#fdba74]">
       {eyebrow}
     </span>
     <h1 className="max-w-2xl text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl lg:text-5xl dark:text-white">
       {title}{' '}
-      <span className="bg-linear-to-r from-[#93764f] via-[#a98c62] to-[#c7ad82] bg-clip-text text-transparent">
+      <span className="bg-linear-to-r from-[#c2410c] via-[#ea580c] to-[#fb923c] bg-clip-text text-transparent">
         {accent}
       </span>
     </h1>
@@ -24,7 +24,7 @@ const PageHero: React.FC<PageHeroProps> = ({ eyebrow, title, accent, description
     {cta && (
       <a
         href={cta.href}
-        className="mt-2 rounded-full bg-linear-to-r from-[#93764f] via-[#a98c62] to-[#c7ad82] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-transform hover:scale-105"
+        className="mt-2 rounded-full bg-linear-to-r from-[#c2410c] via-[#ea580c] to-[#fb923c] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-transform hover:scale-105"
       >
         {cta.label}
       </a>

@@ -51,11 +51,11 @@ const PracticeDrawer: React.FC<PracticeDrawerProps> = ({ question, onClose }) =>
       >
         <div className="flex items-start justify-between gap-3 border-b border-white/10 px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex min-w-0 items-start gap-3">
-            <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-[#93764f] via-[#a98c62] to-[#c7ad82] text-xs font-bold text-white">
+            <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-[#c2410c] via-[#ea580c] to-[#fb923c] text-xs font-bold text-white">
               {question?.n}
             </span>
             <div className="min-w-0">
-              <p className="text-[11px] font-medium tracking-wide text-[#c9a877] uppercase">
+              <p className="text-[11px] font-medium tracking-wide text-[#fdba74] uppercase">
                 {question?.category}
               </p>
               <p className="text-sm leading-snug font-semibold text-white sm:text-[15px]">{question?.q}</p>

@@ -84,7 +84,7 @@ const RoadmapView: React.FC<RoadmapViewProps> = ({
                 onClick={onNavigate}
                 className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${
                   activeId === phase.id
-                    ? 'bg-[#9a7b53]/14 font-medium text-[#7f5f37] dark:text-[#cdb083]'
+                    ? 'bg-[#ea580c]/14 font-medium text-[#c2410c] dark:text-[#fdba74]'
                     : 'text-gray-600 hover:bg-black/5 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white'
                 }`}
               >
@@ -104,7 +104,7 @@ const RoadmapView: React.FC<RoadmapViewProps> = ({
               onClick={onNavigate}
               className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-black/5 dark:text-gray-200 dark:hover:bg-white/10"
             >
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-linear-to-br from-[#93764f] via-[#a98c62] to-[#c7ad82] text-[10px] font-bold text-white">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-linear-to-br from-[#c2410c] via-[#ea580c] to-[#fb923c] text-[10px] font-bold text-white">
                 {link.badge}
               </span>
               {link.label}
@@ -123,13 +123,13 @@ const RoadmapView: React.FC<RoadmapViewProps> = ({
       <div className="mb-4 lg:hidden">
         <button
           onClick={() => setMobileNavOpen((o) => !o)}
-          className="flex w-full items-center justify-between rounded-lg border border-[#6b5836]/12 bg-[#f0e7d6]/55 px-4 py-3 text-sm font-medium text-gray-700 shadow-sm dark:border-white/10 dark:bg-[#a9885d]/8 dark:text-gray-200"
+          className="flex w-full items-center justify-between rounded-lg border border-[#9a3412]/12 bg-[#f0e7d6]/55 px-4 py-3 text-sm font-medium text-gray-700 shadow-sm dark:border-white/10 dark:bg-[#f97316]/8 dark:text-gray-200"
         >
           {navLabel}
           <span className={`transition-transform ${mobileNavOpen ? 'rotate-180' : ''}`}>⌄</span>
         </button>
         {mobileNavOpen && (
-          <div className="mt-2 max-h-[60vh] overflow-y-auto rounded-lg border border-[#6b5836]/12 bg-[#f0e7d6]/55 p-3 shadow-sm dark:border-white/10 dark:bg-[#a9885d]/8">
+          <div className="mt-2 max-h-[60vh] overflow-y-auto rounded-lg border border-[#9a3412]/12 bg-[#f0e7d6]/55 p-3 shadow-sm dark:border-white/10 dark:bg-[#f97316]/8">
             <SidebarLinks onNavigate={() => setMobileNavOpen(false)} />
           </div>
         )}
@@ -146,7 +146,7 @@ const RoadmapView: React.FC<RoadmapViewProps> = ({
           {chapters.map((chapter, chIdx) => (
             <div key={chapter.id} className="mb-10 min-w-0">
               <div className="mb-5 flex items-center gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-[#93764f] via-[#a98c62] to-[#c7ad82] text-sm font-bold text-white">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-[#c2410c] via-[#ea580c] to-[#fb923c] text-sm font-bold text-white">
                   {String(chIdx + 1).padStart(2, '0')}
                 </span>
                 <h2 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-white">{chapter.title}</h2>
@@ -158,13 +158,13 @@ const RoadmapView: React.FC<RoadmapViewProps> = ({
                     key={phase.id}
                     id={phase.id}
                     data-phase-id={phase.id}
-                    className="min-w-0 scroll-mt-24 rounded-xl border border-[#6b5836]/12 bg-[#f0e7d6]/55 p-5 shadow-sm sm:p-7 dark:border-white/10 dark:bg-[#a9885d]/8"
+                    className="min-w-0 scroll-mt-24 rounded-xl border border-[#9a3412]/12 bg-[#f0e7d6]/55 p-5 shadow-sm sm:p-7 dark:border-white/10 dark:bg-[#f97316]/8"
                   >
                     <div className="mb-4 flex flex-wrap items-center gap-3">
                       <h3 className="text-lg font-semibold text-gray-900 sm:text-xl dark:text-white">
                         {phase.title}
                       </h3>
-                      <span className="rounded-full border border-[#9a7b53]/25 bg-[#9a7b53]/12 px-3 py-0.5 text-xs font-medium text-[#6f5230] dark:border-white/12 dark:bg-[#c9b48f]/12 dark:text-[#d8bf94]">
+                      <span className="rounded-full border border-[#ea580c]/25 bg-[#ea580c]/12 px-3 py-0.5 text-xs font-medium text-[#9a3412] dark:border-white/12 dark:bg-[#fb923c]/12 dark:text-[#fdba74]">
                         {phase.duration}
                       </span>
                     </div>

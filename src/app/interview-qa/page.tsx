@@ -56,7 +56,7 @@ const InterviewQAPage: React.FC = () => {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search a question or keyword…"
             inputMode="search"
-            className="w-full rounded-full border border-[#6b5836]/12 bg-[#f0e7d6]/55 px-5 py-3 text-sm shadow-sm outline-none transition-colors focus:border-[#a9885d] dark:border-white/10 dark:bg-white/5 dark:text-white"
+            className="w-full rounded-full border border-[#9a3412]/12 bg-[#f0e7d6]/55 px-5 py-3 text-sm shadow-sm outline-none transition-colors focus:border-[#f97316] dark:border-white/10 dark:bg-white/5 dark:text-white"
           />
           {normalizedQuery && (
             <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
@@ -83,7 +83,7 @@ const InterviewQAPage: React.FC = () => {
           {filtered.map((cat) => (
           <section key={cat.title} id={slugify(cat.title)} className="scroll-mt-24">
             <h2 className="mb-4 flex items-center gap-3 text-lg font-semibold text-gray-900 sm:mb-5 sm:text-xl dark:text-white">
-              <span className="h-2 w-2 shrink-0 rounded-full bg-linear-to-r from-[#93764f] to-[#c1a67d]" />
+              <span className="h-2 w-2 shrink-0 rounded-full bg-linear-to-r from-[#c2410c] to-[#fb923c]" />
               {cat.title}
               <span className="text-sm font-normal text-gray-400">{cat.items.length}</span>
             </h2>
@@ -92,7 +92,7 @@ const InterviewQAPage: React.FC = () => {
                 <div
                   key={`${cat.title}-${idx}`}
                   id={anchorFromText(item.q)}
-                  className={`scroll-mt-24 rounded-xl border border-[#6b5836]/12 bg-[#f0e7d6]/55 p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5 dark:border-white/10 dark:bg-[#a9885d]/8 ${
+                  className={`scroll-mt-24 rounded-xl border border-[#9a3412]/12 bg-[#f0e7d6]/55 p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5 dark:border-white/10 dark:bg-[#f97316]/8 ${
                     item.code ? 'md:col-span-2' : ''
                   }`}
                 >

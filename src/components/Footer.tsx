@@ -46,7 +46,7 @@ const Footer: React.FC = () => {
                   href="https://rishabh-portfolio1-ten.vercel.app/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-semibold text-[#7f5f37] underline underline-offset-2 hover:text-[#96703f] dark:text-[#cdb083]"
+                  className="font-semibold text-[#c2410c] underline underline-offset-2 hover:text-[#c2410c] dark:text-[#fdba74]"
                 >
                   Rishabh Tiwari
                 </a>
@@ -56,7 +56,7 @@ const Footer: React.FC = () => {
                   href="https://rishabh-portfolio1-ten.vercel.app/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="transition-colors hover:text-[#7f5f37] dark:hover:text-[#cdb083]"
+                  className="transition-colors hover:text-[#c2410c] dark:hover:text-[#fdba74]"
                 >
                   Portfolio
                 </a>
@@ -65,7 +65,7 @@ const Footer: React.FC = () => {
                   href="https://www.linkedin.com/in/rishabh-tiwari"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="transition-colors hover:text-[#7f5f37] dark:hover:text-[#cdb083]"
+                  className="transition-colors hover:text-[#c2410c] dark:hover:text-[#fdba74]"
                 >
                   LinkedIn
                 </a>
@@ -74,7 +74,7 @@ const Footer: React.FC = () => {
                   href="https://x.com/Rishabh__73"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="transition-colors hover:text-[#7f5f37] dark:hover:text-[#cdb083]"
+                  className="transition-colors hover:text-[#c2410c] dark:hover:text-[#fdba74]"
                 >
                   X (Twitter)
                 </a>
@@ -83,7 +83,7 @@ const Footer: React.FC = () => {
                   href="https://drive.google.com/file/d/1FAoUklRT1ESkVprO1Ux6IlQnUJnLRlyv/view?usp=sharing"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="transition-colors hover:text-[#7f5f37] dark:hover:text-[#cdb083]"
+                  className="transition-colors hover:text-[#c2410c] dark:hover:text-[#fdba74]"
                 >
                   Resume
                 </a>
