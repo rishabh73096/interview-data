@@ -20,7 +20,7 @@ const PageHero: React.FC<PageHeroProps> = ({ eyebrow, title, accent, description
         {accent}
       </span>
     </h1>
-    <p className="max-w-2xl text-sm text-gray-600 sm:text-base lg:text-lg dark:text-gray-300">{description}</p>
+    <p className="max-w-5xl text-sm text-gray-600 sm:text-base lg:text-lg dark:text-gray-300">{description}</p>
     {cta && (
       <a
         href={cta.href}
