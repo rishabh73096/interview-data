@@ -44,6 +44,70 @@ Production React Native Engineer
 \`\`\``,
       },
       {
+        id: 'start-here-setup',
+        title: 'Start Here — Setup Steps On Your MacBook (Zero to First App)',
+        duration: 'Half a day',
+        content: `> Do this once, in this exact order, before touching any roadmap topic. Steps only — no code to copy, just the sequence to follow.
+
+## 0. What you should already know before starting
+
+- JavaScript ES6+ (arrow functions, destructuring, promises/async-await, array methods) — if shaky, spend 2-3 days on the JS section of this site's Interview Q&A first
+- React basics — components, props, useState, useEffect (you do NOT need to be an expert, just comfortable)
+- Basic CSS concepts — box model, and specifically **Flexbox** (RN styling is Flexbox-based by default, there is no CSS file, no Grid). You don't need HTML/CSS for the web itself, only the Flexbox mental model
+- You do NOT need Swift, Kotlin, or any native mobile experience to start
+
+## 1. Install the core tools on your Mac (one-time)
+
+1. Install **Homebrew** (the Mac package manager) if you don't have it — one command from brew.sh
+2. Install **Node.js** (LTS version) via Homebrew or nvm — this gives you \`node\` and \`npm\`
+3. Install **Watchman** via Homebrew — RN's file-watcher, avoids random "changes not detected" bugs
+4. Install **VS Code** (or your editor of choice) plus the ESLint and Prettier extensions
+5. Install **Git** if not already present (Mac usually ships with it)
+
+## 2. Set up iOS tooling (Mac-only, needed to run the iOS simulator)
+
+1. Install **Xcode** from the Mac App Store (large download, be patient)
+2. Open Xcode once, let it finish installing additional components
+3. Open Xcode → Settings → Locations → set the Command Line Tools dropdown
+4. Accept the license: run the Xcode license-accept command from the terminal (Xcode will prompt you if you forget)
+5. Open Simulator once from Xcode to confirm it launches on its own
+
+## 3. Set up Android tooling (needed to run the Android emulator)
+
+1. Install **Android Studio**
+2. On first launch, go through the setup wizard so it installs the Android SDK, SDK Platform-Tools, and an emulator image
+3. Open the **Device Manager** inside Android Studio and create one Virtual Device (AVD) — pick a recent Pixel profile
+4. Add \`ANDROID_HOME\` and the SDK \`platform-tools\` to your shell PATH (Android Studio's SDK Manager screen shows you the exact path to add) — this is what lets you run \`adb\` from the terminal
+5. Launch the emulator once from Device Manager to confirm it boots
+
+## 4. Create and run your first app
+
+1. Use the official Expo starter command to scaffold a new project (search "create expo app" — the command is one line, Expo's own docs keep it current)
+2. \`cd\` into the new project folder
+3. Start the dev server with the Expo start command
+4. Press the on-screen shortcut to open it on the iOS simulator, and separately the shortcut for the Android emulator — confirm BOTH open before moving on
+5. Edit the home screen text and save — confirm the app hot-reloads instantly (this proves your whole toolchain works)
+
+## 5. Try it on a real phone (do this too, not optional)
+
+1. Install the **Expo Go** app from the App Store / Play Store on your own phone
+2. With the dev server running, scan the QR code it prints in the terminal
+3. Confirm the app opens on your real device over the same Wi-Fi network
+
+## 6. Only after all of the above works, start the roadmap in order
+
+1. Read "Mobile App Architecture" (next phase) — no coding, just concepts
+2. Then "React Native Architecture & Expo vs CLI" — this explains WHAT you just installed and why
+3. Then continue phase by phase down this roadmap — do not skip ahead to navigation/state/API topics before finishing Stage 1
+
+## Common setup mistakes
+
+- Skipping Watchman, then debugging phantom "my change isn't showing up" bugs for an hour
+- Never adding \`platform-tools\` to PATH, so \`adb\` "command not found" forever
+- Only testing on ONE simulator and finding platform bugs late
+- Trying to learn Redux/navigation/API calls before confirming the basic app even runs`,
+      },
+      {
         id: 'mobile-architecture-platforms',
         title: 'Mobile App Architecture: iOS vs Android, Native vs Cross-Platform',
         duration: '2-3 days',
