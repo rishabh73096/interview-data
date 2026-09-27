@@ -10,13 +10,52 @@ import { slugify, anchorFromText } from '../../lib/anchor';
 
 const totalQuestions = qaCategories.reduce((sum, cat) => sum + cat.items.length, 0);
 
+type LevelKey = 'top25' | 'top50' | 'top100' | 'all';
+
+// Tiers are cumulative: Top 50 = tier 1+2, Top 100 = tier 1+2+3, All = everything.
+// undefined `maxTier` means no filtering (show every question).
+const LEVELS: { key: LevelKey; label: string; sub: string; maxTier?: 1 | 2 | 3 }[] = [
+  { key: 'top25', label: 'Top 25', sub: 'Interview day · 30-45 min', maxTier: 1 },
+  { key: 'top50', label: 'Top 50', sub: '1 day before · 60-90 min', maxTier: 2 },
+  { key: 'top100', label: 'Top 100', sub: '2-3 days before · ~2 hrs', maxTier: 3 },
+  { key: 'all', label: 'All Questions', sub: 'Reference library' },
+];
+
+const countForLevel = (maxTier?: 1 | 2 | 3) =>
+  qaCategories.reduce(
+    (sum, cat) =>
+      sum +
+      cat.items.filter((item) => maxTier === undefined || (item.tier !== undefined && item.tier <= maxTier))
+        .length,
+    0
+  );
+
+const levelCounts: Record<LevelKey, number> = LEVELS.reduce(
+  (acc, lvl) => ({ ...acc, [lvl.key]: countForLevel(lvl.maxTier) }),
+  {} as Record<LevelKey, number>
+);
+
 const InterviewQAPage: React.FC = () => {
+  const [level, setLevel] = useState<LevelKey>('all');
   const [query, setQuery] = useState('');
   const normalizedQuery = query.trim().toLowerCase();
+  const activeLevel = LEVELS.find((l) => l.key === level) ?? LEVELS[LEVELS.length - 1];
+
+  const byLevel = useMemo(() => {
+    if (activeLevel.maxTier === undefined) return qaCategories;
+    return qaCategories
+      .map((cat) => ({
+        ...cat,
+        items: cat.items.filter(
+          (item) => item.tier !== undefined && item.tier <= activeLevel.maxTier!
+        ),
+      }))
+      .filter((cat) => cat.items.length > 0);
+  }, [activeLevel]);
 
   const filtered = useMemo(() => {
-    if (!normalizedQuery) return qaCategories;
-    return qaCategories
+    if (!normalizedQuery) return byLevel;
+    return byLevel
       .map((cat) => ({
         ...cat,
         items: cat.items.filter(
@@ -26,8 +65,9 @@ const InterviewQAPage: React.FC = () => {
         ),
       }))
       .filter((cat) => cat.items.length > 0);
-  }, [normalizedQuery]);
+  }, [byLevel, normalizedQuery]);
 
+  const levelTotal = levelCounts[level];
   const totalShown = filtered.reduce((sum, cat) => sum + cat.items.length, 0);
 
   const navCategories = filtered.map((cat) => ({
@@ -45,10 +85,40 @@ const InterviewQAPage: React.FC = () => {
         description={
           <>
             {totalQuestions} short, 1-2 line answers across JavaScript, React, Node, databases, system
-            design and more — built for a fast pass before your next full-stack interview.
+            design and more. Pick a tier below based on how much time you have — Top 25 for right before
+            the interview, All Questions when you are just learning.
           </>
         }
       >
+        <div className="mt-4 flex w-full max-w-2xl flex-wrap gap-2">
+          {LEVELS.map((lvl) => {
+            const isActive = lvl.key === level;
+            return (
+              <button
+                key={lvl.key}
+                type="button"
+                onClick={() => setLevel(lvl.key)}
+                aria-pressed={isActive}
+                className={`flex flex-col items-start rounded-xl border px-3.5 py-2 text-left transition-colors ${
+                  isActive
+                    ? 'border-[#f97316] bg-[#f97316]/12 dark:border-[#f97316]/60 dark:bg-[#f97316]/15'
+                    : 'border-[#9a3412]/12 bg-[#f0e7d6]/55 hover:border-[#f97316]/50 dark:border-white/10 dark:bg-white/5'
+                }`}
+              >
+                <span
+                  className={`text-sm font-semibold ${
+                    isActive ? 'text-[#c2410c] dark:text-[#fb923c]' : 'text-gray-900 dark:text-white'
+                  }`}
+                >
+                  {lvl.label}
+                  <span className="ml-1.5 font-normal text-gray-400">{levelCounts[lvl.key]}</span>
+                </span>
+                <span className="text-[11px] text-gray-500 dark:text-gray-400">{lvl.sub}</span>
+              </button>
+            );
+          })}
+        </div>
+
         <div className="mt-4 w-full max-w-xl">
           <input
             type="search"
@@ -58,9 +128,13 @@ const InterviewQAPage: React.FC = () => {
             inputMode="search"
             className="w-full rounded-full border border-[#9a3412]/12 bg-[#f0e7d6]/55 px-5 py-3 text-sm shadow-sm outline-none transition-colors focus:border-[#f97316] dark:border-white/10 dark:bg-white/5 dark:text-white"
           />
-          {normalizedQuery && (
+          {normalizedQuery ? (
             <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-              {totalShown} of {totalQuestions} questions match &ldquo;{query}&rdquo;
+              {totalShown} of {levelTotal} questions match &ldquo;{query}&rdquo; in {activeLevel.label}
+            </p>
+          ) : (
+            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              Showing {levelTotal} questions — {activeLevel.label} ({activeLevel.sub})
             </p>
           )}
         </div>
