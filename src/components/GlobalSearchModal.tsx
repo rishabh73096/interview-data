@@ -108,7 +108,10 @@ const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 z-[80] bg-[#f4ecdd] dark:bg-[#141210]"
+      className="fixed inset-0 z-[80] bg-[#f4ecdd]/70 backdrop-blur-xl dark:bg-[#141210]/70"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
       role="dialog"
       aria-modal="true"
       aria-label="Search everything"
