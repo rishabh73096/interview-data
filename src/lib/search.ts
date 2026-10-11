@@ -11,6 +11,7 @@ import { hrCategories } from '../data/hrQuestions';
 import { systemDesignChapters } from '../data/systemDesign';
 import { roadmapChapters } from '../data/roadmap';
 import { mobileRoadmapChapters } from '../data/roadmapMobile';
+import { aiRoadmapChapters } from '../data/roadmapAI';
 import { projectModuleChapters } from '../data/projectModules';
 
 export type SearchGroup =
@@ -21,6 +22,7 @@ export type SearchGroup =
   | 'HR & Behavioral'
   | 'Roadmap'
   | 'Mobile Roadmap'
+  | 'AI Roadmap'
   | 'Project Modules';
 
 export interface SearchEntry {
@@ -161,6 +163,22 @@ export function buildSearchIndex(): SearchEntry[] {
           plain(phase.content),
           phase.content,
           `/roadmap#${phase.id}`,
+        ),
+      );
+    });
+  });
+
+  aiRoadmapChapters.forEach((chapter) => {
+    chapter.phases.forEach((phase) => {
+      entries.push(
+        make(
+          `ai-${phase.id}`,
+          'AI Roadmap',
+          phase.title,
+          chapter.title,
+          plain(phase.content),
+          phase.content,
+          `/roadmap-ai#${phase.id}`,
         ),
       );
     });

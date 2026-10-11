@@ -57,10 +57,10 @@ const sections: {
   {
     href: '/system-design-roadmap',
     title: 'System Design Roadmap',
-    stat: '148 topics · 3 tracks',
-    count: 148,
+    stat: '177 topics · 4 tracks',
+    count: 177,
     description:
-      'A backend + frontend + mobile system design checklist split into basic, medium and hard — each topic tagged with the companies that typically ask it (Google, Microsoft, Amazon, Meta and more), linked to the notebook, with a saved progress tracker.',
+      'A backend + frontend + mobile + AI system design checklist split into basic, medium and hard — each topic tagged with the companies that typically ask it (Google, Microsoft, Amazon, Meta and more), linked to the notebook, with a saved progress tracker.',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
         <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
@@ -110,6 +110,21 @@ const sections: {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
         <circle cx="12" cy="12" r="3" />
         <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
+      </svg>
+    ),
+  },
+  {
+    href: '/roadmap-ai',
+    title: 'AI Engineering Roadmap',
+    stat: '35 phases · 9 stages',
+    count: 35,
+    description:
+      'Zero-to-production AI track with MacBook setup — Python, just-enough ML, LLM apps, RAG, agents and MCP, evals, safety, fine-tuning, serving, AI system design, five projects and a 16-week plan.',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
+        <rect x="4" y="4" width="16" height="16" rx="2" />
+        <rect x="9" y="9" width="6" height="6" />
+        <path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3" />
       </svg>
     ),
   },

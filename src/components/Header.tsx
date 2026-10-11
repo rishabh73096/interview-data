@@ -11,6 +11,7 @@ const navLinks = [
   { href: '/coding-questions', label: 'Practice', blurb: 'Coding problems with editor' },
   { href: '/hr-questions', label: 'HR Prep', blurb: 'Behavioural round answers' },
   { href: '/roadmap', label: 'Roadmap', blurb: 'MERN → Full Stack AI' },
+  { href: '/roadmap-ai', label: 'AI Roadmap', blurb: 'AI engineering, setup to production' },
   { href: '/roadmap-mobile', label: 'Mobile', blurb: 'React Native roadmap' },
 ];
 

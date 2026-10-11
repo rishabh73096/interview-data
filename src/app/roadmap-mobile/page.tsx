@@ -1,6 +1,11 @@
 import React from 'react';
 import { mobileRoadmapChapters } from '../../data/roadmapMobile';
 import RoadmapView from '../../components/RoadmapView';
+import { mobilePhaseDocs } from '../../data/docLinks';
+
+const phaseDocs = Object.fromEntries(
+  mobileRoadmapChapters.flatMap((ch) => ch.phases.map((p) => [p.id, mobilePhaseDocs(p.id)]))
+);
 
 const totalPhases = mobileRoadmapChapters.reduce((sum, ch) => sum + ch.phases.length, 0);
 
@@ -11,6 +16,7 @@ const RoadmapMobilePage: React.FC = () => (
     title="React Native"
     accent="Mobile Roadmap"
     navLabel="Stages"
+    phaseDocs={phaseDocs}
     description={
       <>
         {totalPhases} stages to go from your existing React knowledge to a{' '}
@@ -21,6 +27,7 @@ const RoadmapMobilePage: React.FC = () => (
     }
     crossLinks={[
       { href: '/roadmap', label: 'Full Stack AI Roadmap', badge: 'AI' },
+      { href: '/roadmap-ai', label: 'AI Engineering Roadmap', badge: 'AI+' },
       { href: '/system-design', label: 'System Design Notes', badge: 'S' },
       { href: '/interview-qa', label: 'Quick Interview Q&A', badge: 'Q' },
     ]}

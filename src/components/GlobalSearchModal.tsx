@@ -16,6 +16,7 @@ const GROUP_ORDER: SearchGroup[] = [
   'HR & Behavioral',
   'Roadmap',
   'Mobile Roadmap',
+  'AI Roadmap',
   'Project Modules',
 ];
 
@@ -27,6 +28,7 @@ const GROUP_BADGE: Record<SearchGroup, string> = {
   'HR & Behavioral': 'HR',
   Roadmap: 'R',
   'Mobile Roadmap': 'RN',
+  'AI Roadmap': 'AI',
   'Project Modules': 'M',
 };
 

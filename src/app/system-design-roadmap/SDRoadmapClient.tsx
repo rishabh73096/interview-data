@@ -2,6 +2,8 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import PageHero from '../../components/PageHero';
+import DocLinks from '../../components/DocLinks';
+import { sdTopicDocs } from '../../data/docLinks';
 import {
   companyFocus,
   levelMeta,
@@ -20,7 +22,7 @@ const levelStyle: Record<SDLevel, string> = {
   hard: 'bg-rose-500/15 text-rose-700 dark:text-rose-300',
 };
 
-const trackLabel: Record<SDTrack, string> = { backend: 'Backend', frontend: 'Frontend', mobile: 'Mobile' };
+const trackLabel: Record<SDTrack, string> = { backend: 'Backend', frontend: 'Frontend', mobile: 'Mobile', ai: 'AI' };
 
 const pill = (active: boolean) =>
   `rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
@@ -79,7 +81,7 @@ const SDRoadmapClient: React.FC = () => {
       <PageHero
         eyebrow="Interview Roadmap"
         title="System Design"
-        accent="Backend · Frontend · Mobile"
+        accent="Backend · Frontend · Mobile · AI"
         description={
           <>
             {sdRoadmapTopics.length} topics split into basic, medium and hard — with the companies that typically
@@ -88,7 +90,7 @@ const SDRoadmapClient: React.FC = () => {
         }
       >
         <div className="mt-4 flex gap-2">
-          {(['backend', 'frontend', 'mobile'] as SDTrack[]).map((t) => (
+          {(['backend', 'frontend', 'mobile', 'ai'] as SDTrack[]).map((t) => (
             <button key={t} onClick={() => setTrack(t)} className={pill(track === t)}>
               {trackLabel[t]}
             </button>
@@ -201,6 +203,7 @@ const SDRoadmapClient: React.FC = () => {
                             </pre>
                           </details>
                         )}
+                        <DocLinks links={sdTopicDocs(t.id)} className="mt-3" />
                         <div className="mt-3 flex flex-wrap items-center gap-1.5">
                           {t.companies.map((c) => (
                             <button

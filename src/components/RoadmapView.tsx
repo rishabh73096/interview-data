@@ -3,6 +3,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import DocRenderer from './DocRenderer';
 import PageHero from './PageHero';
+import DocLinks from './DocLinks';
+import type { DocLink } from '../data/docLinks';
 
 export interface RoadmapPhase {
   id: string;
@@ -31,6 +33,8 @@ interface RoadmapViewProps {
   description: React.ReactNode;
   crossLinks: RoadmapCrossLink[];
   navLabel?: string;
+  /** Official docs shown under each phase */
+  phaseDocs?: Record<string, DocLink[]>;
 }
 
 const RoadmapView: React.FC<RoadmapViewProps> = ({
@@ -41,6 +45,7 @@ const RoadmapView: React.FC<RoadmapViewProps> = ({
   description,
   crossLinks,
   navLabel = 'Phases',
+  phaseDocs,
 }) => {
   const [activeId, setActiveId] = useState<string>(chapters[0].phases[0].id);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -169,6 +174,13 @@ const RoadmapView: React.FC<RoadmapViewProps> = ({
                       </span>
                     </div>
                     <DocRenderer content={phase.content} />
+                    {phaseDocs && (
+                      <DocLinks
+                        links={phaseDocs[phase.id] ?? []}
+                        title="Official docs & references"
+                        className="mt-5 border-t border-black/10 pt-4 dark:border-white/10"
+                      />
+                    )}
                   </article>
                 ))}
               </div>

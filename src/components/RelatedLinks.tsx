@@ -19,6 +19,7 @@ const ALL_LINKS: LinkEntry[] = [
   { href: '/project-modules', title: 'Project Modules Explained', blurb: 'Auth, RBAC, rewards, payments — how each is built', emoji: '🧩' },
   { href: '/hr-questions', title: 'HR / Behavioural Prep', blurb: 'The non-technical round, with framed answers', emoji: '💬' },
   { href: '/roadmap', title: 'Full Stack AI Roadmap', blurb: 'MERN → Full Stack AI Engineer, phase by phase', emoji: '🚀' },
+  { href: '/roadmap-ai', title: 'AI Engineering Roadmap', blurb: 'Setup → LLMs, RAG, agents, evals, serving', emoji: '🤖' },
   { href: '/roadmap-mobile', title: 'React Native Roadmap', blurb: 'Your React knowledge → production mobile dev', emoji: '📱' },
 ];
 

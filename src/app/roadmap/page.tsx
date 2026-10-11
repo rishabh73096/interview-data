@@ -20,6 +20,7 @@ const RoadmapPage: React.FC = () => (
       </>
     }
     crossLinks={[
+      { href: '/roadmap-ai', label: 'AI Engineering Roadmap', badge: 'AI+' },
       { href: '/roadmap-mobile', label: 'React Native Roadmap', badge: 'RN' },
       { href: '/system-design', label: 'System Design Notes', badge: 'S' },
       { href: '/interview-qa', label: 'Quick Interview Q&A', badge: 'Q' },
