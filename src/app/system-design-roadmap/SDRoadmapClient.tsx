@@ -20,6 +20,8 @@ const levelStyle: Record<SDLevel, string> = {
   hard: 'bg-rose-500/15 text-rose-700 dark:text-rose-300',
 };
 
+const trackLabel: Record<SDTrack, string> = { backend: 'Backend', frontend: 'Frontend', mobile: 'Mobile' };
+
 const pill = (active: boolean) =>
   `rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
     active
@@ -77,7 +79,7 @@ const SDRoadmapClient: React.FC = () => {
       <PageHero
         eyebrow="Interview Roadmap"
         title="System Design"
-        accent="Frontend & Backend"
+        accent="Backend · Frontend · Mobile"
         description={
           <>
             {sdRoadmapTopics.length} topics split into basic, medium and hard — with the companies that typically
@@ -86,9 +88,9 @@ const SDRoadmapClient: React.FC = () => {
         }
       >
         <div className="mt-4 flex gap-2">
-          {(['backend', 'frontend'] as SDTrack[]).map((t) => (
+          {(['backend', 'frontend', 'mobile'] as SDTrack[]).map((t) => (
             <button key={t} onClick={() => setTrack(t)} className={pill(track === t)}>
-              {t === 'backend' ? 'Backend' : 'Frontend'}
+              {trackLabel[t]}
             </button>
           ))}
         </div>
@@ -189,6 +191,16 @@ const SDRoadmapClient: React.FC = () => {
                           </div>
                         </div>
                         <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-300">{t.points}</p>
+                        {t.snippet && (
+                          <details className="mt-3">
+                            <summary className="cursor-pointer text-xs font-medium text-[#c2410c] dark:text-[#fdba74]">
+                              Show folder structure
+                            </summary>
+                            <pre className="mt-2 overflow-x-auto rounded-lg bg-black/5 p-3 text-xs leading-relaxed text-gray-800 dark:bg-white/5 dark:text-gray-200">
+                              {t.snippet}
+                            </pre>
+                          </details>
+                        )}
                         <div className="mt-3 flex flex-wrap items-center gap-1.5">
                           {t.companies.map((c) => (
                             <button

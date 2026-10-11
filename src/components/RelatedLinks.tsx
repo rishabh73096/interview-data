@@ -14,7 +14,7 @@ const ALL_LINKS: LinkEntry[] = [
   { href: '/components', title: 'Live Components', blurb: '26 hand-built React components, source one click away', emoji: '🧱' },
   { href: '/interview-qa', title: 'Quick Interview Q&A', blurb: '224 short answers across JS, React, Node, DBs & Git', emoji: '⚡' },
   { href: '/system-design', title: 'System Design Notebook', blurb: '119 topics, FAANG-level, with full worked designs', emoji: '📐' },
-  { href: '/system-design-roadmap', title: 'System Design Roadmap', blurb: 'Frontend & backend topics by level, mapped to companies', emoji: '🗺️' },
+  { href: '/system-design-roadmap', title: 'System Design Roadmap', blurb: 'Backend, frontend & mobile topics by level, mapped to companies', emoji: '🗺️' },
   { href: '/coding-questions', title: 'Coding Practice', blurb: '112 problems in a VS-Code-style side editor', emoji: '⌨️' },
   { href: '/project-modules', title: 'Project Modules Explained', blurb: 'Auth, RBAC, rewards, payments — how each is built', emoji: '🧩' },
   { href: '/hr-questions', title: 'HR / Behavioural Prep', blurb: 'The non-technical round, with framed answers', emoji: '💬' },

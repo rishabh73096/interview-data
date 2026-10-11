@@ -57,10 +57,10 @@ const sections: {
   {
     href: '/system-design-roadmap',
     title: 'System Design Roadmap',
-    stat: '63 topics · 3 levels',
-    count: 63,
+    stat: '148 topics · 3 tracks',
+    count: 148,
     description:
-      'A frontend + backend system design checklist split into basic, medium and hard — each topic tagged with the companies that typically ask it (Google, Microsoft, Amazon, Meta and more), linked to the notebook, with a saved progress tracker.',
+      'A backend + frontend + mobile system design checklist split into basic, medium and hard — each topic tagged with the companies that typically ask it (Google, Microsoft, Amazon, Meta and more), linked to the notebook, with a saved progress tracker.',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
         <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
